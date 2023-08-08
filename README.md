@@ -1,4 +1,4 @@
-# Recommendation letter module
+# Law module
 
 ## Overview
 
