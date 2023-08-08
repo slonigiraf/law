@@ -1,4 +1,4 @@
-// Was generated with https://github.com/slonigiraf/recommendation-letter-testing
+// Was generated with https://github.com/slonigiraf/law-testing
 use super::*;
 
 use crate as letters;

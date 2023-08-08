@@ -14,13 +14,13 @@ This pallet was not audited for bugs. Do not use this pallet as-is in production
 
 ## How to test
 ```sh
-git clone https://github.com/slonigiraf/recommendation-letter.git
-cd recommendation-letter
+git clone https://github.com/slonigiraf/law.git
+cd law
 cargo test --features balances
 ```
 
 ## How to use
-- An example blockchain node that uses recommendation letters: [recommendation-letter-example-node](https://github.com/slonigiraf/recommendation-letter-example-node)
-- An example user interface: [recommendation-letter-example-ui](https://github.com/slonigiraf/recommendation-letter-example-ui)
+- An example blockchain node that uses recommendation letters: [law-example-node](https://github.com/slonigiraf/law-example-node)
+- An example user interface: [law-example-ui](https://github.com/slonigiraf/law-example-ui)
 
 License: Unlicense
