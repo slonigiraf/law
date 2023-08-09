@@ -88,6 +88,7 @@ pub mod pallet {
 		ReimbursementHappened(H256, u64),
 		LawCreated([u8; 32], BalanceOf<T>),
 		LawEdited([u8; 32], [u8; 32], [u8; 32], BalanceOf<T>),
+		LawUpvoted([u8; 32], BalanceOf<T>),
 	}
 
 	#[pallet::error]
@@ -103,6 +104,7 @@ pub mod pallet {
 		BalanceIsNotEnough,
 		MissingId,
 		NewPriceIsLow,
+		PriceOverflow,
 	}
 
 	#[pallet::pallet]
@@ -113,7 +115,7 @@ pub mod pallet {
 	impl<T: Config> Pallet<T> {
 
 		// Create a law functionality
-		#[pallet::weight(T::WeightInfo::reimburse())] // TODO: change
+		#[pallet::weight(10_000)] //TODO: change
 		#[transactional]
 		pub fn create(
 			origin: OriginFor<T>,
@@ -128,7 +130,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 		// Edit a law functionality
-		#[pallet::weight(T::WeightInfo::reimburse())] // TODO: change
+		#[pallet::weight(10_000)] //TODO: change
 		#[transactional]
 		pub fn edit(
 			origin: OriginFor<T>,
@@ -144,6 +146,22 @@ pub mod pallet {
 			Self::deposit_event(Event::LawEdited(id, old_text, new_text, new_price));
 			Ok(().into())
 		}
+
+		#[pallet::weight(10_000)] //TODO: change
+        pub fn upvote(
+			origin: OriginFor<T>,
+			id: [u8; 32],
+			price: BalanceOf<T>,
+		) -> DispatchResultWithPostInfo {
+            let sender = ensure_signed(origin)?;
+			let (text, old_price) = Laws::<T>::get(&id).ok_or(Error::<T>::MissingId)?;
+			let new_price = old_price + price;
+			ensure!(new_price > old_price, Error::<T>::PriceOverflow);
+			<T as Config>::Currency::withdraw(&sender, price, WithdrawReasons::TRANSFER.into(), ExistenceRequirement::KeepAlive).map_err(|_| Error::<T>::BalanceIsNotEnough)?;
+			Laws::<T>::insert(id, (text, new_price));
+			Self::deposit_event(Event::LawUpvoted(id, price));
+			Ok(().into())
+        }
 
 		// A reimbursement functionality. A referee should should pay initially defined Balance sum if employer thinks that the letter is wrong.
 		#[pallet::weight(T::WeightInfo::reimburse())]
