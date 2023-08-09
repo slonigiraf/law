@@ -118,6 +118,10 @@ pub const BEFORE_VALID_BLOCK_NUMBER: u64 = 99;
 pub const LAST_VALID_BLOCK_NUMBER: u64 = 100;
 pub const AFTER_VALID_BLOCK_NUMBER: u64 = 101;
 
+// --------------
+pub const INITIAL_LAW_ID: [u8; 32] = [212,53,147,199,21,253,211,28,97,20,26,189,4,169,159,214,130,44,133,88,133,76,205,227,154,86,132,231,165,109,162,125];
+pub const EDITED_LAW_ID: [u8; 32] = [142,175,4,21,22,135,115,99,38,201,254,161,126,37,252,82,135,97,54,147,201,18,144,156,178,38,170,71,148,242,106,72];
+
 
 // Build genesis storage according to the mock runtime.
 pub fn new_test_ext() -> sp_io::TestExternalities {
@@ -475,49 +479,45 @@ fn wrong_worker_sign() {
 #[test]
 fn successful_creation() {
     new_test_ext().execute_with(|| {
-        let referee_hash = H256::from(REFEREE_ID);
-
-        let referee_signature: [u8; 64] = [216,163,30,143,81,31,127,209,105,35,237,107,180,150,128,121,166,124,79,247,98,190,97,211,154,50,146,127,246,177,57,5,204,56,21,52,78,158,254,146,128,63,126,181,50,45,46,9,96,32,200,236,244,25,100,169,213,236,67,172,140,66,232,139];
-        let worker_signature: [u8; 64] = [168,174,81,192,173,33,161,63,219,108,119,65,205,98,248,17,248,180,216,88,217,168,129,79,11,151,82,9,19,250,17,95,145,12,117,145,145,6,96,37,240,65,79,8,179,109,8,110,110,215,221,35,100,45,219,34,170,196,28,17,68,102,111,135];
-        frame_system::Pallet::<Test>::set_block_number(LAST_VALID_BLOCK_NUMBER);
+        // Extract account creation for reuse
+        let referee_account = AccountId::from(Public::from_raw(REFEREE_ID)).into_account();
         
-        assert_eq!(
-            LawModule::was_letter_canceled(referee_hash.clone(), LETTER_ID as usize),
-            false
-        );
+        // Get initial balance
+		let initial_balance = <pallet_balances::Pallet<Test>>::total_balance(&referee_account);
 
-        assert_ok!(LawModule::reimburse(
-            Origin::signed(AccountId::from(Public::from_raw(REFEREE_ID)).into_account()),
-            PARA_ID,
-            LETTER_ID,
-            LAST_VALID_BLOCK_NUMBER,
-            H256::from(REFEREE_ID),
-            H256::from(WORKER_ID),
-            H256::from(EMPLOYER_ID),
-            REFEREE_STAKE,
-            H512::from(referee_signature),
-            H512::from(worker_signature)
+		// Assert law does not exist initially
+		assert_eq!(LawModule::law_exists(INITIAL_LAW_ID), false);
+
+        // Attempt to create the law
+        assert_ok!(LawModule::create(
+            Origin::signed(referee_account.clone()),
+            INITIAL_LAW_ID,
+            REFEREE_STAKE
         ));
 
-        assert_eq!(
-            LawModule::was_letter_canceled(referee_hash.clone(), LETTER_ID as usize),
-            true
-        );
+        // Assert law now exists and the balance was deducted
+		assert_eq!(LawModule::law_exists(INITIAL_LAW_ID), true);
+		let post_balance = <pallet_balances::Pallet<Test>>::total_balance(&referee_account);
+        assert_eq!(post_balance, initial_balance - REFEREE_STAKE);
+    });
+}
 
-        assert_noop!(
-            LawModule::reimburse(
-                Origin::signed(AccountId::from(Public::from_raw(REFEREE_ID)).into_account()),
-                PARA_ID,
-                LETTER_ID,
-                LAST_VALID_BLOCK_NUMBER,
-                H256::from(REFEREE_ID),
-                H256::from(WORKER_ID),
-                H256::from(EMPLOYER_ID),
-                REFEREE_STAKE,
-                H512::from(referee_signature),
-                H512::from(worker_signature)
-            ),
-            Error::<Test>::LetterWasMarkedAsFraudBefore
+
+#[test]
+fn prohibit_creation_with_existing_id() {
+    new_test_ext().execute_with(|| {
+        assert_ok!(LawModule::create(
+            Origin::signed(AccountId::from(Public::from_raw(REFEREE_ID)).into_account()),
+            INITIAL_LAW_ID,
+            REFEREE_STAKE
+        ));
+		assert_noop!(
+            LawModule::create(
+				Origin::signed(AccountId::from(Public::from_raw(REFEREE_ID)).into_account()),
+				INITIAL_LAW_ID,
+				REFEREE_STAKE
+			),
+            Error::<Test>::UsedId
         );
     });
 }

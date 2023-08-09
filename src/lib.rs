@@ -339,6 +339,11 @@ impl<T: Config> Pallet<T> {
 	}
 
 	/// A helper function to find out if the storage contains a chunk
+	fn law_exists(id: [u8; 32]) -> bool {
+		<Laws<T>>::contains_key(id.clone())
+	}
+
+	/// A helper function to find out if the storage contains a chunk
 	fn chunk_exists(to: H256, chunk: usize) -> bool {
 		<OwnedLetersArray<T>>::contains_key((to.clone(), chunk as u64))
 	}
