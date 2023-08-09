@@ -2,7 +2,7 @@
 
 use frame_support::{
 	pallet_prelude::*,
-	traits::{Currency, ExistenceRequirement, Randomness},
+	traits::{Currency, ExistenceRequirement, WithdrawReasons, Randomness},
 	transactional,
 };
 use frame_system::pallet_prelude::*;
@@ -75,7 +75,7 @@ pub mod pallet {
 	#[pallet::genesis_build]
 	impl<T: Config> GenesisBuild<T> for GenesisConfig {
 		fn build(&self) {
-			// May be in future we need to do some coniguration here
+			// May be in future we need to do some configuration here
 		}
 	}
 
@@ -86,6 +86,7 @@ pub mod pallet {
 	// )]
 	pub enum Event<T: Config> {
 		ReimbursementHappened(H256, u64),
+		LawCreated([u8; 32], BalanceOf<T>),
 	}
 
 	#[pallet::error]
@@ -97,6 +98,8 @@ pub mod pallet {
 		LetterWasMarkedAsFraudBefore,
 		Expired,
 		WrongParaId,
+		UsedId,
+		BalanceIsNotEnough,
 	}
 
 	#[pallet::pallet]
@@ -106,6 +109,28 @@ pub mod pallet {
 	//TODO: use https://paritytech.github.io/cumulus/cumulus_primitives_core/struct.ParaId.html
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
+
+		// Create a law functionality
+		#[pallet::weight(T::WeightInfo::reimburse())] // TODO: change
+		#[transactional]
+		pub fn create(
+			origin: OriginFor<T>,
+			id: [u8; 32],
+			price: BalanceOf<T>,
+		) -> DispatchResultWithPostInfo {
+			let sender = ensure_signed(origin)?;
+
+			ensure!( ! Laws::<T>::contains_key(&id), Error::<T>::UsedId);
+			
+			<T as Config>::Currency::withdraw(&sender, price, WithdrawReasons::TRANSFER.into(), ExistenceRequirement::KeepAlive).map_err(|_| Error::<T>::BalanceIsNotEnough)?;
+
+			Laws::<T>::insert(id, (id, price));
+
+			Self::deposit_event(Event::LawCreated(id, price));
+
+			Ok(().into())
+		}
+
 		// A reimbursement functionality. A referee should should pay initially defined Balance sum if employer thinks that the letter is wrong.
 		#[pallet::weight(T::WeightInfo::reimburse())]
 		#[transactional]
