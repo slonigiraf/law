@@ -87,6 +87,7 @@ pub mod pallet {
 	pub enum Event<T: Config> {
 		ReimbursementHappened(H256, u64),
 		LawCreated([u8; 32], BalanceOf<T>),
+		LawEdited([u8; 32], [u8; 32], [u8; 32], BalanceOf<T>),
 	}
 
 	#[pallet::error]
@@ -100,13 +101,14 @@ pub mod pallet {
 		WrongParaId,
 		UsedId,
 		BalanceIsNotEnough,
+		MissingId,
+		NewPriceIsLow,
 	}
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
 	pub struct Pallet<T>(_);
 
-	//TODO: use https://paritytech.github.io/cumulus/cumulus_primitives_core/struct.ParaId.html
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 
@@ -119,15 +121,27 @@ pub mod pallet {
 			price: BalanceOf<T>,
 		) -> DispatchResultWithPostInfo {
 			let sender = ensure_signed(origin)?;
-
 			ensure!( ! Laws::<T>::contains_key(&id), Error::<T>::UsedId);
-			
 			<T as Config>::Currency::withdraw(&sender, price, WithdrawReasons::TRANSFER.into(), ExistenceRequirement::KeepAlive).map_err(|_| Error::<T>::BalanceIsNotEnough)?;
-
 			Laws::<T>::insert(id, (id, price));
-
 			Self::deposit_event(Event::LawCreated(id, price));
-
+			Ok(().into())
+		}
+		// Edit a law functionality
+		#[pallet::weight(T::WeightInfo::reimburse())] // TODO: change
+		#[transactional]
+		pub fn edit(
+			origin: OriginFor<T>,
+			id: [u8; 32],
+			new_text: [u8; 32],
+			new_price: BalanceOf<T>,
+		) -> DispatchResultWithPostInfo {
+			let sender = ensure_signed(origin)?;
+			let (old_text, old_price) = Laws::<T>::get(&id).ok_or(Error::<T>::MissingId)?;
+			ensure!(new_price >= old_price, Error::<T>::NewPriceIsLow);
+			<T as Config>::Currency::withdraw(&sender, new_price, WithdrawReasons::TRANSFER.into(), ExistenceRequirement::KeepAlive).map_err(|_| Error::<T>::BalanceIsNotEnough)?;
+			Laws::<T>::insert(id, (new_text, new_price));
+			Self::deposit_event(Event::LawEdited(id, old_text, new_text, new_price));
 			Ok(().into())
 		}
 
