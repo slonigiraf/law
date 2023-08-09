@@ -62,6 +62,12 @@ pub mod pallet {
 	pub(super) type OwnedLetersArray<T: Config> =
 		StorageMap<_, Twox64Concat, (H256, u64), BoundedVec<bool, T::LettersPerChunk>, ValueQuery>;
 
+	/// A storage for laws
+	#[pallet::storage]
+	#[pallet::getter(fn id_to_law)]
+	pub(super) type Laws<T: Config> =
+		StorageMap<_, Blake2_128Concat, [u8; 32], ([u8; 32], BalanceOf<T>), OptionQuery>;
+
 	#[pallet::genesis_config]
 	#[derive(Default)]
 	pub struct GenesisConfig;
