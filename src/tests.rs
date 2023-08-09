@@ -23,7 +23,7 @@ frame_support::construct_runtime!(
 	{
 		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
-		LettersModule: letters::{Pallet, Call, Storage, Event<T>, Config},
+		LawModule: letters::{Pallet, Call, Storage, Event<T>, Config},
 	}
 );
 
@@ -163,14 +163,14 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 #[test]
 fn coordinates_from_letter_index() {
 	new_test_ext().execute_with(|| {
-		let coordinates = LettersModule::coordinates_from_letter_index(0);
+		let coordinates = LawModule::coordinates_from_letter_index(0);
 		assert_eq!(coordinates.chunk, 0);
 		assert_eq!(coordinates.index, 0);
 		//
-		let coordinates = LettersModule::coordinates_from_letter_index(1);
+		let coordinates = LawModule::coordinates_from_letter_index(1);
 		assert_eq!(coordinates.chunk, 0);
 		assert_eq!(coordinates.index, 1);
-		let coordinates = LettersModule::coordinates_from_letter_index(1001);
+		let coordinates = LawModule::coordinates_from_letter_index(1001);
 		assert_eq!(coordinates.chunk, 1);
 		assert_eq!(coordinates.index, 1);
 	});
@@ -180,15 +180,15 @@ fn coordinates_from_letter_index() {
 fn letter_index_from_coordinates() {
 	new_test_ext().execute_with(|| {
 		let number =
-			LettersModule::letter_index_from_coordinates(LetterCoordinates { chunk: 0, index: 0 });
+			LawModule::letter_index_from_coordinates(LetterCoordinates { chunk: 0, index: 0 });
 		assert_eq!(number, 0);
 		//
 		let number =
-			LettersModule::letter_index_from_coordinates(LetterCoordinates { chunk: 0, index: 1 });
+			LawModule::letter_index_from_coordinates(LetterCoordinates { chunk: 0, index: 1 });
 		assert_eq!(number, 1);
 
 		let number =
-			LettersModule::letter_index_from_coordinates(LetterCoordinates { chunk: 1, index: 1 });
+			LawModule::letter_index_from_coordinates(LetterCoordinates { chunk: 1, index: 1 });
 		assert_eq!(number, 1001);
 	});
 }
@@ -198,18 +198,18 @@ fn mint_chunk() {
 	new_test_ext().execute_with(|| {
 		let referee_hash = H256::from(REFEREE_ID);
 		let chunk = 1;
-		assert_ok!(LettersModule::mint_chunk(referee_hash.clone(), chunk));
+		assert_ok!(LawModule::mint_chunk(referee_hash.clone(), chunk));
 		assert_noop!(
-			LettersModule::mint_chunk(referee_hash.clone(), chunk),
+			LawModule::mint_chunk(referee_hash.clone(), chunk),
 			"Letter already contains_key"
 		);
 
 		assert_eq!(
-			LettersModule::chunk_exists(referee_hash.clone(), chunk),
+			LawModule::chunk_exists(referee_hash.clone(), chunk),
 			true
 		);
-		assert_eq!(LettersModule::chunk_exists(referee_hash.clone(), 0), false);
-		assert_eq!(LettersModule::chunk_exists(referee_hash.clone(), 2), false);
+		assert_eq!(LawModule::chunk_exists(referee_hash.clone(), 0), false);
+		assert_eq!(LawModule::chunk_exists(referee_hash.clone(), 2), false);
 	});
 }
 
@@ -218,28 +218,28 @@ fn was_letter_canceled() {
 	new_test_ext().execute_with(|| {
 		let referee_hash = H256::from(REFEREE_ID);
 		let number = 1;
-		let coordinates = LettersModule::coordinates_from_letter_index(number);
+		let coordinates = LawModule::coordinates_from_letter_index(number);
 		//Assert fresh letters are unused
-		assert_ok!(LettersModule::mint_chunk(
+		assert_ok!(LawModule::mint_chunk(
 			referee_hash.clone(),
 			coordinates.chunk
 		));
 		assert_eq!(
-			LettersModule::was_letter_canceled(referee_hash.clone(), number),
+			LawModule::was_letter_canceled(referee_hash.clone(), number),
 			false
 		);
 		//Use letters
-		assert_ok!(LettersModule::mark_letter_as_fraud(
+		assert_ok!(LawModule::mark_letter_as_fraud(
 			referee_hash.clone(),
 			number
 		));
 		assert_eq!(
-			LettersModule::was_letter_canceled(referee_hash.clone(), number),
+			LawModule::was_letter_canceled(referee_hash.clone(), number),
 			true
 		);
 		//Assert letters in other chunks are unused
 		assert_eq!(
-			LettersModule::was_letter_canceled(referee_hash.clone(), 1001),
+			LawModule::was_letter_canceled(referee_hash.clone(), 1001),
 			false
 		);
 	});
@@ -250,12 +250,12 @@ fn mark_letter_as_fraud() {
 	new_test_ext().execute_with(|| {
 		let referee_hash = H256::from(REFEREE_ID);
 		let number = 1;
-		assert_ok!(LettersModule::mark_letter_as_fraud(
+		assert_ok!(LawModule::mark_letter_as_fraud(
 			referee_hash.clone(),
 			number
 		));
 		assert_eq!(
-			LettersModule::was_letter_canceled(referee_hash.clone(), number),
+			LawModule::was_letter_canceled(referee_hash.clone(), number),
 			true
 		);
 	});
@@ -271,7 +271,7 @@ fn signature_is_valid() {
         let mut data = Vec::new();
         data.extend_from_slice(&data_bytes);
         assert_eq!(
-            LettersModule::signature_is_valid(
+            LawModule::signature_is_valid(
                 H512::from(sign_bytes),
                 data,
                 H256::from(signer_bytes)
@@ -291,7 +291,7 @@ fn expired() {
         frame_system::Pallet::<Test>::set_block_number(AFTER_VALID_BLOCK_NUMBER);
         
         assert_noop!(
-            LettersModule::reimburse(
+            LawModule::reimburse(
                 Origin::signed(AccountId::from(Public::from_raw(REFEREE_ID)).into_account()),
                 PARA_ID,
                 LETTER_ID,
@@ -318,7 +318,7 @@ fn wrong_para_id() {
         frame_system::Pallet::<Test>::set_block_number(LAST_VALID_BLOCK_NUMBER);
         
         assert_noop!(
-            LettersModule::reimburse(
+            LawModule::reimburse(
                 Origin::signed(AccountId::from(Public::from_raw(REFEREE_ID)).into_account()),
                 2,
                 LETTER_ID,
@@ -345,11 +345,11 @@ fn successful_reimburse() {
         frame_system::Pallet::<Test>::set_block_number(LAST_VALID_BLOCK_NUMBER);
         
         assert_eq!(
-            LettersModule::was_letter_canceled(referee_hash.clone(), LETTER_ID as usize),
+            LawModule::was_letter_canceled(referee_hash.clone(), LETTER_ID as usize),
             false
         );
 
-        assert_ok!(LettersModule::reimburse(
+        assert_ok!(LawModule::reimburse(
             Origin::signed(AccountId::from(Public::from_raw(REFEREE_ID)).into_account()),
             PARA_ID,
             LETTER_ID,
@@ -363,12 +363,12 @@ fn successful_reimburse() {
         ));
 
         assert_eq!(
-            LettersModule::was_letter_canceled(referee_hash.clone(), LETTER_ID as usize),
+            LawModule::was_letter_canceled(referee_hash.clone(), LETTER_ID as usize),
             true
         );
 
         assert_noop!(
-            LettersModule::reimburse(
+            LawModule::reimburse(
                 Origin::signed(AccountId::from(Public::from_raw(REFEREE_ID)).into_account()),
                 PARA_ID,
                 LETTER_ID,
@@ -395,7 +395,7 @@ fn wrong_referee_sign() {
         frame_system::Pallet::<Test>::set_block_number(LAST_VALID_BLOCK_NUMBER);
 
         assert_noop!(
-            LettersModule::reimburse(
+            LawModule::reimburse(
                 Origin::signed(AccountId::from(Public::from_raw(REFEREE_ID)).into_account()),
                 PARA_ID,
                 LETTER_ID,
@@ -427,7 +427,7 @@ fn referee_has_not_enough_balance() {
         );
 
         assert_noop!(
-            LettersModule::reimburse(
+            LawModule::reimburse(
                 Origin::signed(AccountId::from(Public::from_raw(REFEREE_ID)).into_account()),
                 PARA_ID,
                 LETTER_ID,
@@ -454,7 +454,7 @@ fn wrong_worker_sign() {
         frame_system::Pallet::<Test>::set_block_number(LAST_VALID_BLOCK_NUMBER);
 
         assert_noop!(
-            LettersModule::reimburse(
+            LawModule::reimburse(
                 Origin::signed(AccountId::from(Public::from_raw(REFEREE_ID)).into_account()),
                 PARA_ID,
                 LETTER_ID,
@@ -467,6 +467,57 @@ fn wrong_worker_sign() {
                 H512::from(worker_signature)
             ),
             Error::<Test>::InvalidWorkerSign
+        );
+    });
+}
+
+// -------------------
+#[test]
+fn successful_creation() {
+    new_test_ext().execute_with(|| {
+        let referee_hash = H256::from(REFEREE_ID);
+
+        let referee_signature: [u8; 64] = [216,163,30,143,81,31,127,209,105,35,237,107,180,150,128,121,166,124,79,247,98,190,97,211,154,50,146,127,246,177,57,5,204,56,21,52,78,158,254,146,128,63,126,181,50,45,46,9,96,32,200,236,244,25,100,169,213,236,67,172,140,66,232,139];
+        let worker_signature: [u8; 64] = [168,174,81,192,173,33,161,63,219,108,119,65,205,98,248,17,248,180,216,88,217,168,129,79,11,151,82,9,19,250,17,95,145,12,117,145,145,6,96,37,240,65,79,8,179,109,8,110,110,215,221,35,100,45,219,34,170,196,28,17,68,102,111,135];
+        frame_system::Pallet::<Test>::set_block_number(LAST_VALID_BLOCK_NUMBER);
+        
+        assert_eq!(
+            LawModule::was_letter_canceled(referee_hash.clone(), LETTER_ID as usize),
+            false
+        );
+
+        assert_ok!(LawModule::reimburse(
+            Origin::signed(AccountId::from(Public::from_raw(REFEREE_ID)).into_account()),
+            PARA_ID,
+            LETTER_ID,
+            LAST_VALID_BLOCK_NUMBER,
+            H256::from(REFEREE_ID),
+            H256::from(WORKER_ID),
+            H256::from(EMPLOYER_ID),
+            REFEREE_STAKE,
+            H512::from(referee_signature),
+            H512::from(worker_signature)
+        ));
+
+        assert_eq!(
+            LawModule::was_letter_canceled(referee_hash.clone(), LETTER_ID as usize),
+            true
+        );
+
+        assert_noop!(
+            LawModule::reimburse(
+                Origin::signed(AccountId::from(Public::from_raw(REFEREE_ID)).into_account()),
+                PARA_ID,
+                LETTER_ID,
+                LAST_VALID_BLOCK_NUMBER,
+                H256::from(REFEREE_ID),
+                H256::from(WORKER_ID),
+                H256::from(EMPLOYER_ID),
+                REFEREE_STAKE,
+                H512::from(referee_signature),
+                H512::from(worker_signature)
+            ),
+            Error::<Test>::LetterWasMarkedAsFraudBefore
         );
     });
 }

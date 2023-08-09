@@ -175,7 +175,7 @@ pub mod pallet {
 			let (text, old_price) = Laws::<T>::get(&id).ok_or(Error::<T>::MissingId)?;
 			let mut new_price = old_price;
 			let mut payment  = price;
-			if(price < old_price){
+			if price < old_price {
 				new_price = old_price - price;
 			} else {
 				new_price = old_price - old_price;
