@@ -90,6 +90,7 @@ pub mod pallet {
 		LawEdited([u8; 32], [u8; 32], [u8; 32], BalanceOf<T>),
 		LawUpvoted([u8; 32], BalanceOf<T>),
 		LawDownvoted([u8; 32], BalanceOf<T>),
+		LawRemoved([u8; 32], BalanceOf<T>),
 	}
 
 	#[pallet::error]
@@ -184,6 +185,19 @@ pub mod pallet {
 			<T as Config>::Currency::withdraw(&sender, payment, WithdrawReasons::TRANSFER.into(), ExistenceRequirement::KeepAlive).map_err(|_| Error::<T>::BalanceIsNotEnough)?;
 			Laws::<T>::insert(id, (text, new_price));
 			Self::deposit_event(Event::LawDownvoted(id, payment));
+			Ok(().into())
+        }
+
+		#[pallet::weight(10_000)] //TODO: change
+        pub fn remove(
+			origin: OriginFor<T>,
+			id: [u8; 32],
+		) -> DispatchResultWithPostInfo {
+            let sender = ensure_signed(origin)?;
+			let (_, price) = Laws::<T>::get(&id).ok_or(Error::<T>::MissingId)?;
+			<T as Config>::Currency::withdraw(&sender, price, WithdrawReasons::TRANSFER.into(), ExistenceRequirement::KeepAlive).map_err(|_| Error::<T>::BalanceIsNotEnough)?;
+			Laws::<T>::remove(id);
+			Self::deposit_event(Event::LawRemoved(id, price));
 			Ok(().into())
         }
 						
