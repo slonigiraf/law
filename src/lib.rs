@@ -89,6 +89,7 @@ pub mod pallet {
 		LawCreated([u8; 32], BalanceOf<T>),
 		LawEdited([u8; 32], [u8; 32], [u8; 32], BalanceOf<T>),
 		LawUpvoted([u8; 32], BalanceOf<T>),
+		LawDownvoted([u8; 32], BalanceOf<T>),
 	}
 
 	#[pallet::error]
@@ -162,6 +163,30 @@ pub mod pallet {
 			Self::deposit_event(Event::LawUpvoted(id, price));
 			Ok(().into())
         }
+
+		#[pallet::weight(10_000)] //TODO: change
+		pub fn downvote(
+			origin: OriginFor<T>,
+			id: [u8; 32],
+			price: BalanceOf<T>,
+		) -> DispatchResultWithPostInfo {
+            let sender = ensure_signed(origin)?;
+			let (text, old_price) = Laws::<T>::get(&id).ok_or(Error::<T>::MissingId)?;
+			let mut new_price = old_price;
+			let mut payment  = price;
+			if(price < old_price){
+				new_price = old_price - price;
+			} else {
+				new_price = old_price - old_price;
+				payment = old_price;
+			}
+
+			<T as Config>::Currency::withdraw(&sender, payment, WithdrawReasons::TRANSFER.into(), ExistenceRequirement::KeepAlive).map_err(|_| Error::<T>::BalanceIsNotEnough)?;
+			Laws::<T>::insert(id, (text, new_price));
+			Self::deposit_event(Event::LawDownvoted(id, payment));
+			Ok(().into())
+        }
+						
 
 		// A reimbursement functionality. A referee should should pay initially defined Balance sum if employer thinks that the letter is wrong.
 		#[pallet::weight(T::WeightInfo::reimburse())]
