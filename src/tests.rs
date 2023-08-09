@@ -27,6 +27,8 @@ frame_support::construct_runtime!(
 	}
 );
 
+pub type TestEvent = Event;
+
 parameter_types! {
 	pub const BlockHashCount: u64 = 250;
 	pub const SS58Prefix: u8 = 42;
@@ -488,6 +490,9 @@ fn successful_creation() {
 		// Assert law does not exist initially
 		assert_eq!(LawModule::law_exists(INITIAL_LAW_ID), false);
 
+		// Clear events
+        frame_system::Pallet::<Test>::reset_events();
+
         // Attempt to create the law
         assert_ok!(LawModule::create(
             Origin::signed(referee_account.clone()),
@@ -499,6 +504,15 @@ fn successful_creation() {
 		assert_eq!(LawModule::law_exists(INITIAL_LAW_ID), true);
 		let post_balance = <pallet_balances::Pallet<Test>>::total_balance(&referee_account);
         assert_eq!(post_balance, initial_balance - REFEREE_STAKE);
+
+		
+		// Check for emitted event
+        let events = frame_system::Pallet::<Test>::events();
+        assert_eq!(events.len(), 2);
+        assert_eq!(
+            events[1].event,
+            TestEvent::LawModule(letters::Event::<Test>::LawCreated(INITIAL_LAW_ID, REFEREE_STAKE))
+        );
     });
 }
 
