@@ -100,6 +100,17 @@ impl Config for Test {
 	type WeightInfo = ();
 }
 
+impl<T: Config> Pallet<T> {
+	/// A helper function to find out if the law exists
+	fn law_exists(id: [u8; 32]) -> bool {
+		<Laws<T>>::contains_key(&id)
+	}
+	/// A helper function to get law text
+	fn get_law(id: [u8; 32]) -> Option<([u8; 32], BalanceOf<T>)> {
+		<Laws<T>>::get(&id)
+	}
+}
+
 // Build genesis storage according to the mock runtime.
 pub fn new_test_ext() -> sp_io::TestExternalities {
 	let mut t = frame_system::GenesisConfig::default()

@@ -171,13 +171,3 @@ pub mod pallet {
 	}
 }
 
-impl<T: Config> Pallet<T> {
-	/// A helper function to find out if the law exists
-	fn law_exists(id: [u8; 32]) -> bool {
-		<Laws<T>>::contains_key(id.clone())
-	}
-	/// A helper function to get law text
-	fn get_law(id: [u8; 32]) -> Option<([u8; 32], BalanceOf<T>)> {
-		<Laws<T>>::get(id.clone())
-	}
-}
