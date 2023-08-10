@@ -293,5 +293,8 @@ fn edit_new_price_is_low() {
             ),
             Error::<Test>::NewPriceIsLow
         );
+		let (updated_text, new_price) = LawModule::get_law(INITIAL_LAW_ID).unwrap();
+        assert_eq!(updated_text, INITIAL_LAW_ID);
+        assert_eq!(new_price, LAW_PRICE);
     });
 }
