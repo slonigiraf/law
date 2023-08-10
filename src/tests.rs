@@ -87,20 +87,13 @@ impl Config for Test {
 	type WeightInfo = ();
 }
 
-
-pub const REFEREE_ID: [u8; 32] = [212,53,147,199,21,253,211,28,97,20,26,189,4,169,159,214,130,44,133,88,133,76,205,227,154,86,132,231,165,109,162,125];
-pub const WORKER_ID: [u8; 32] = [142,175,4,21,22,135,115,99,38,201,254,161,126,37,252,82,135,97,54,147,201,18,144,156,178,38,170,71,148,242,106,72];
+pub const CREATOR: [u8; 32] = [212,53,147,199,21,253,211,28,97,20,26,189,4,169,159,214,130,44,133,88,133,76,205,227,154,86,132,231,165,109,162,125];
+pub const EDITOR: [u8; 32] = [142,175,4,21,22,135,115,99,38,201,254,161,126,37,252,82,135,97,54,147,201,18,144,156,178,38,170,71,148,242,106,72];
 pub const INITIAL_BALANCE: u64 = 1000;
-pub const REFEREE_STAKE: u64 = 10;
-pub const PARA_ID: u32 = 1;
-pub const LETTER_ID: u32 = 1;
-pub const BEFORE_VALID_BLOCK_NUMBER: u64 = 99;
-pub const LAST_VALID_BLOCK_NUMBER: u64 = 100;
-pub const AFTER_VALID_BLOCK_NUMBER: u64 = 101;
-
-// --------------
+pub const LAW_PRICE: u64 = 10;
 pub const INITIAL_LAW_ID: [u8; 32] = [212,53,147,199,21,253,211,28,97,20,26,189,4,169,159,214,130,44,133,88,133,76,205,227,154,86,132,231,165,109,162,125];
-pub const EDITED_LAW_ID: [u8; 32] = [142,175,4,21,22,135,115,99,38,201,254,161,126,37,252,82,135,97,54,147,201,18,144,156,178,38,170,71,148,242,106,72];
+pub const INITIAL_LAW_TEXT: [u8; 32] = INITIAL_LAW_ID;
+pub const EDITED_LAW_TEXT: [u8; 32] = [142,175,4,21,22,135,115,99,38,201,254,161,126,37,252,82,135,97,54,147,201,18,144,156,178,38,170,71,148,242,106,72];
 
 
 // Build genesis storage according to the mock runtime.
@@ -112,11 +105,11 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 	pallet_balances::GenesisConfig::<Test> {
 		balances: vec![
 			(
-				AccountId::from(Public::from_raw(REFEREE_ID)).into_account(),
+				AccountId::from(Public::from_raw(CREATOR)).into_account(),
 				INITIAL_BALANCE,
 			),
 			(
-				AccountId::from(Public::from_raw(WORKER_ID)).into_account(),
+				AccountId::from(Public::from_raw(EDITOR)).into_account(),
 				INITIAL_BALANCE,
 			),
 		],
@@ -141,7 +134,7 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 fn successful_creation() {
     new_test_ext().execute_with(|| {
         // Extract account creation for reuse
-        let referee_account = AccountId::from(Public::from_raw(REFEREE_ID)).into_account();
+        let referee_account = AccountId::from(Public::from_raw(CREATOR)).into_account();
         
         // Get initial balance
 		let initial_balance = <pallet_balances::Pallet<Test>>::total_balance(&referee_account);
@@ -156,13 +149,13 @@ fn successful_creation() {
         assert_ok!(LawModule::create(
             Origin::signed(referee_account.clone()),
             INITIAL_LAW_ID,
-            REFEREE_STAKE
+            LAW_PRICE
         ));
 
         // Assert law now exists and the balance was deducted
 		assert_eq!(LawModule::law_exists(INITIAL_LAW_ID), true);
 		let post_balance = <pallet_balances::Pallet<Test>>::total_balance(&referee_account);
-        assert_eq!(post_balance, initial_balance - REFEREE_STAKE);
+        assert_eq!(post_balance, initial_balance - LAW_PRICE);
 
 		
 		// Check for emitted event
@@ -170,7 +163,7 @@ fn successful_creation() {
         assert_eq!(events.len(), 2);
         assert_eq!(
             events[1].event,
-            TestEvent::LawModule(letters::Event::<Test>::LawCreated(INITIAL_LAW_ID, REFEREE_STAKE))
+            TestEvent::LawModule(letters::Event::<Test>::LawCreated(INITIAL_LAW_ID, LAW_PRICE))
         );
     });
 }
@@ -180,15 +173,15 @@ fn successful_creation() {
 fn prohibit_creation_with_existing_id() {
     new_test_ext().execute_with(|| {
         assert_ok!(LawModule::create(
-            Origin::signed(AccountId::from(Public::from_raw(REFEREE_ID)).into_account()),
+            Origin::signed(AccountId::from(Public::from_raw(CREATOR)).into_account()),
             INITIAL_LAW_ID,
-            REFEREE_STAKE
+            LAW_PRICE
         ));
 		assert_noop!(
             LawModule::create(
-				Origin::signed(AccountId::from(Public::from_raw(REFEREE_ID)).into_account()),
+				Origin::signed(AccountId::from(Public::from_raw(CREATOR)).into_account()),
 				INITIAL_LAW_ID,
-				REFEREE_STAKE
+				LAW_PRICE
 			),
             Error::<Test>::UsedId
         );
@@ -199,31 +192,31 @@ fn prohibit_creation_with_existing_id() {
 fn successful_edit() {
     new_test_ext().execute_with(|| {
         // Extract account creation for reuse
-        let referee_account = AccountId::from(Public::from_raw(REFEREE_ID)).into_account();
+        let referee_account = AccountId::from(Public::from_raw(CREATOR)).into_account();
         
         // Attempt to create the law
         assert_ok!(LawModule::create(
             Origin::signed(referee_account.clone()),
             INITIAL_LAW_ID,
-            REFEREE_STAKE
+            LAW_PRICE
         ));
 
         // Clear events
         frame_system::Pallet::<Test>::reset_events();
 
 		// Attempt to edit the law
-		let price_for_edit = REFEREE_STAKE;
+		let price_for_edit = LAW_PRICE;
 		let pre_balance = <pallet_balances::Pallet<Test>>::total_balance(&referee_account);
         assert_ok!(LawModule::edit(
             Origin::signed(referee_account.clone()),
             INITIAL_LAW_ID,
-			EDITED_LAW_ID,
+			EDITED_LAW_TEXT,
             price_for_edit
         ));
 
 		// Assert law was edited
 		let (updated_text, new_price) = LawModule::get_law(INITIAL_LAW_ID).unwrap();
-		assert_eq!(updated_text, EDITED_LAW_ID);
+		assert_eq!(updated_text, EDITED_LAW_TEXT);
 		assert_eq!(new_price, price_for_edit);
 		
 		// Assert the balance was deducted
@@ -235,7 +228,7 @@ fn successful_edit() {
         assert_eq!(events.len(), 2);
         assert_eq!(
             events[1].event,
-            TestEvent::LawModule(letters::Event::<Test>::LawEdited(INITIAL_LAW_ID, INITIAL_LAW_ID, EDITED_LAW_ID, price_for_edit))
+            TestEvent::LawModule(letters::Event::<Test>::LawEdited(INITIAL_LAW_ID, INITIAL_LAW_ID, EDITED_LAW_TEXT, price_for_edit))
         );
     });
 }
@@ -244,25 +237,25 @@ fn successful_edit() {
 fn edit_balance_is_not_enough() {
     new_test_ext().execute_with(|| {
         // Extract account creation for reuse
-        let referee_account = AccountId::from(Public::from_raw(REFEREE_ID)).into_account();
+        let referee_account = AccountId::from(Public::from_raw(CREATOR)).into_account();
         
         // Attempt to create the law
         assert_ok!(LawModule::create(
             Origin::signed(referee_account.clone()),
             INITIAL_LAW_ID,
-            REFEREE_STAKE
+            LAW_PRICE
         ));
 
         // Clear events
         frame_system::Pallet::<Test>::reset_events();
 
 		// Attempt to create the law
-		let price_for_edit = REFEREE_STAKE-1;
+		let price_for_edit = LAW_PRICE-1;
 		assert_noop!(
             LawModule::edit(
 				Origin::signed(referee_account.clone()),
 				INITIAL_LAW_ID,
-				EDITED_LAW_ID,
+				EDITED_LAW_TEXT,
 				price_for_edit
 			),
             Error::<Test>::NewPriceIsLow

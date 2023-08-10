@@ -171,9 +171,6 @@ pub mod pallet {
 	}
 }
 
-impl<T: Config> Pallet<T> {}
-
-const INSURANCE_PER_CHUNK: usize = 1000;
 impl<T: Config> Pallet<T> {
 	/// A helper function to find out if the law exists
 	fn law_exists(id: [u8; 32]) -> bool {
