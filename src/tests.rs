@@ -606,3 +606,50 @@ fn downvote_balance_is_not_enough() {
         assert_eq!(new_price, creation_price);
     });
 }
+
+#[test]
+fn remove_success() {
+    new_test_ext().execute_with(|| {
+        // Extract account creation for reuse
+        let creator = account_id_from_raw(CREATOR);
+        let editor = account_id_from_raw(EDITOR);
+
+        // Attempt to create the law
+        assert_ok!(LawModule::create(
+            Origin::signed(creator.clone()),
+            INITIAL_LAW_ID,
+            LAW_PRICE
+        ));
+
+		assert_eq!(LawModule::law_exists(INITIAL_LAW_ID), true);
+
+        // Clear events
+        frame_system::Pallet::<Test>::reset_events();
+
+        // Attempt to remove the law
+        let upvote_price = LAW_PRICE;
+        let pre_balance = <pallet_balances::Pallet<Test>>::total_balance(&editor);
+        assert_ok!(LawModule::remove(
+            Origin::signed(editor.clone()),
+            INITIAL_LAW_ID
+        ));
+
+        // Assert law was removed
+        assert_eq!(LawModule::law_exists(INITIAL_LAW_ID), false);
+
+        // Assert the balance was deducted
+        let post_balance = <pallet_balances::Pallet<Test>>::total_balance(&editor);
+        assert_eq!(post_balance, pre_balance - LAW_PRICE);
+
+        // Check for emitted event
+        let events = frame_system::Pallet::<Test>::events();
+        assert_eq!(events.len(), 2);
+        assert_eq!(
+            events[1].event,
+            TestEvent::LawModule(letters::Event::<Test>::LawRemoved(
+                INITIAL_LAW_ID,
+                LAW_PRICE
+            ))
+        );
+    });
+}
