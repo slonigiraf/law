@@ -146,7 +146,7 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 
 
 #[test]
-fn successful_creation() {
+fn creation_success() {
     new_test_ext().execute_with(|| {
         // Extract account creation for reuse
         let creator = account_id_from_raw(CREATOR);
@@ -185,7 +185,7 @@ fn successful_creation() {
 
 
 #[test]
-fn prohibit_creation_with_existing_id() {
+fn creation_used_id() {
 	let creator = account_id_from_raw(CREATOR);
     new_test_ext().execute_with(|| {
         assert_ok!(LawModule::create(
@@ -205,7 +205,7 @@ fn prohibit_creation_with_existing_id() {
 }
 
 #[test]
-fn successful_edit() {
+fn edit_success() {
     new_test_ext().execute_with(|| {
         // Extract account creation for reuse
         let creator = account_id_from_raw(CREATOR);
@@ -251,7 +251,7 @@ fn successful_edit() {
 }
 
 #[test]
-fn edit_balance_is_not_enough() {
+fn edit_new_price_is_low() {
     new_test_ext().execute_with(|| {
         // Extract account creation for reuse
         let creator = account_id_from_raw(CREATOR);
