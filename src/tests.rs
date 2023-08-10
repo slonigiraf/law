@@ -189,7 +189,7 @@ fn creation_success() {
 #[test]
 fn creation_used_id() {
     new_test_ext().execute_with(|| {
-		let creator = account_id_from_raw(CREATOR);
+        let creator = account_id_from_raw(CREATOR);
         assert_ok!(LawModule::create(
             Origin::signed(creator),
             INITIAL_LAW_ID,
@@ -205,12 +205,12 @@ fn creation_used_id() {
 #[test]
 fn creation_balance_is_not_enough() {
     new_test_ext().execute_with(|| {
-		let creator = account_id_from_raw(CREATOR);
+        let creator = account_id_from_raw(CREATOR);
         assert_noop!(
             LawModule::create(Origin::signed(creator), INITIAL_LAW_ID, INITIAL_BALANCE + 1),
             Error::<Test>::BalanceIsNotEnough
         );
-		assert_eq!(LawModule::law_exists(INITIAL_LAW_ID), false);
+        assert_eq!(LawModule::law_exists(INITIAL_LAW_ID), false);
     });
 }
 
@@ -269,13 +269,13 @@ fn edit_success() {
 fn edit_missing_id() {
     new_test_ext().execute_with(|| {
         let editor = account_id_from_raw(EDITOR);
-		assert_noop!(
+        assert_noop!(
             LawModule::edit(
-				Origin::signed(editor.clone()),
-				INITIAL_LAW_ID,
-				EDITED_LAW_TEXT,
-				LAW_PRICE
-			),
+                Origin::signed(editor.clone()),
+                INITIAL_LAW_ID,
+                EDITED_LAW_TEXT,
+                LAW_PRICE
+            ),
             Error::<Test>::MissingId
         );
     });
@@ -309,7 +309,7 @@ fn edit_new_price_is_low() {
             ),
             Error::<Test>::NewPriceIsLow
         );
-		let (updated_text, new_price) = LawModule::get_law(INITIAL_LAW_ID).unwrap();
+        let (updated_text, new_price) = LawModule::get_law(INITIAL_LAW_ID).unwrap();
         assert_eq!(updated_text, INITIAL_LAW_ID);
         assert_eq!(new_price, LAW_PRICE);
     });
@@ -340,7 +340,7 @@ fn edit_balance_is_not_enough() {
             ),
             Error::<Test>::BalanceIsNotEnough
         );
-		let (updated_text, new_price) = LawModule::get_law(INITIAL_LAW_ID).unwrap();
+        let (updated_text, new_price) = LawModule::get_law(INITIAL_LAW_ID).unwrap();
         assert_eq!(updated_text, INITIAL_LAW_ID);
         assert_eq!(new_price, LAW_PRICE);
     });
@@ -375,7 +375,7 @@ fn upvote_success() {
         // Assert law was upvoted
         let (updated_text, new_price) = LawModule::get_law(INITIAL_LAW_ID).unwrap();
         assert_eq!(updated_text, INITIAL_LAW_ID);
-        assert_eq!(new_price, LAW_PRICE+upvote_price);
+        assert_eq!(new_price, LAW_PRICE + upvote_price);
 
         // Assert the balance was deducted
         let post_balance = <pallet_balances::Pallet<Test>>::total_balance(&editor);
@@ -398,12 +398,8 @@ fn upvote_success() {
 fn upvote_missing_id() {
     new_test_ext().execute_with(|| {
         let creator = account_id_from_raw(CREATOR);
-		assert_noop!(
-            LawModule::upvote(
-				Origin::signed(creator.clone()),
-				INITIAL_LAW_ID,
-				LAW_PRICE
-			),
+        assert_noop!(
+            LawModule::upvote(Origin::signed(creator.clone()), INITIAL_LAW_ID, LAW_PRICE),
             Error::<Test>::MissingId
         );
     });
@@ -427,14 +423,14 @@ fn upvote_price_overflow() {
 
         assert_noop!(
             LawModule::upvote(
-				Origin::signed(creator.clone()),
-				INITIAL_LAW_ID,
-				upvote_price
-			),
+                Origin::signed(creator.clone()),
+                INITIAL_LAW_ID,
+                upvote_price
+            ),
             Error::<Test>::PriceOverflow
         );
 
-		// Assert law was not upvoted
+        // Assert law was not upvoted
         let (_, new_price) = LawModule::get_law(INITIAL_LAW_ID).unwrap();
         assert_eq!(new_price, LAW_PRICE);
     });
@@ -454,19 +450,78 @@ fn upvote_balance_is_not_enough() {
         ));
 
         // Attempt to upvote the law
-        let upvote_price = INITIAL_BALANCE+1;
+        let upvote_price = INITIAL_BALANCE + 1;
 
         assert_noop!(
             LawModule::upvote(
-				Origin::signed(creator.clone()),
-				INITIAL_LAW_ID,
-				upvote_price
-			),
+                Origin::signed(creator.clone()),
+                INITIAL_LAW_ID,
+                upvote_price
+            ),
             Error::<Test>::BalanceIsNotEnough
         );
 
-		// Assert law was not upvoted
+        // Assert law was not upvoted
         let (_, new_price) = LawModule::get_law(INITIAL_LAW_ID).unwrap();
         assert_eq!(new_price, LAW_PRICE);
+    });
+}
+
+#[test]
+fn downvote_success() {
+    new_test_ext().execute_with(|| {
+        // Extract account creation for reuse
+        let creator = account_id_from_raw(CREATOR);
+        let editor = account_id_from_raw(EDITOR);
+
+        // Attempt to create the law
+        assert_ok!(LawModule::create(
+            Origin::signed(creator.clone()),
+            INITIAL_LAW_ID,
+            LAW_PRICE
+        ));
+
+        // Clear events
+        frame_system::Pallet::<Test>::reset_events();
+
+        // Attempt to downvote the law
+        let downvote_price = 1;
+        let pre_balance = <pallet_balances::Pallet<Test>>::total_balance(&editor);
+        assert_ok!(LawModule::downvote(
+            Origin::signed(editor.clone()),
+            INITIAL_LAW_ID,
+            downvote_price
+        ));
+
+        // Assert law was downvoted
+        let (updated_text, new_price) = LawModule::get_law(INITIAL_LAW_ID).unwrap();
+        assert_eq!(updated_text, INITIAL_LAW_ID);
+        assert_eq!(new_price, LAW_PRICE - downvote_price);
+
+        // Assert the balance was deducted
+        let post_balance = <pallet_balances::Pallet<Test>>::total_balance(&editor);
+        assert_eq!(post_balance, pre_balance - downvote_price);
+
+        // Check for emitted event
+        let events = frame_system::Pallet::<Test>::events();
+        assert_eq!(events.len(), 2);
+        assert_eq!(
+            events[1].event,
+            TestEvent::LawModule(letters::Event::<Test>::LawDownvoted(
+                INITIAL_LAW_ID,
+                downvote_price
+            ))
+        );
+    });
+}
+
+#[test]
+fn downvote_missing_id() {
+    new_test_ext().execute_with(|| {
+        let creator = account_id_from_raw(CREATOR);
+        assert_noop!(
+            LawModule::downvote(Origin::signed(creator.clone()), INITIAL_LAW_ID, LAW_PRICE),
+            Error::<Test>::MissingId
+        );
     });
 }
