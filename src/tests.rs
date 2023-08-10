@@ -298,3 +298,34 @@ fn edit_new_price_is_low() {
         assert_eq!(new_price, LAW_PRICE);
     });
 }
+
+#[test]
+fn edit_balance_is_not_enough() {
+    new_test_ext().execute_with(|| {
+        // Extract account creation for reuse
+        let creator = account_id_from_raw(CREATOR);
+        let editor = account_id_from_raw(EDITOR);
+
+        // Attempt to create the law
+        assert_ok!(LawModule::create(
+            Origin::signed(creator.clone()),
+            INITIAL_LAW_ID,
+            LAW_PRICE
+        ));
+
+        // Attempt to edit the law
+        let price_for_edit = INITIAL_BALANCE + 1;
+        assert_noop!(
+            LawModule::edit(
+                Origin::signed(editor.clone()),
+                INITIAL_LAW_ID,
+                EDITED_LAW_TEXT,
+                price_for_edit
+            ),
+            Error::<Test>::BalanceIsNotEnough
+        );
+		let (updated_text, new_price) = LawModule::get_law(INITIAL_LAW_ID).unwrap();
+        assert_eq!(updated_text, INITIAL_LAW_ID);
+        assert_eq!(new_price, LAW_PRICE);
+    });
+}
