@@ -238,7 +238,8 @@ fn edit_balance_is_not_enough() {
     new_test_ext().execute_with(|| {
         // Extract account creation for reuse
         let creator = AccountId::from(Public::from_raw(CREATOR)).into_account();
-        
+        let editor = AccountId::from(Public::from_raw(EDITOR)).into_account();
+
         // Attempt to create the law
         assert_ok!(LawModule::create(
             Origin::signed(creator.clone()),
@@ -253,7 +254,7 @@ fn edit_balance_is_not_enough() {
 		let price_for_edit = LAW_PRICE-1;
 		assert_noop!(
             LawModule::edit(
-				Origin::signed(creator.clone()),
+				Origin::signed(editor.clone()),
 				INITIAL_LAW_ID,
 				EDITED_LAW_TEXT,
 				price_for_edit
