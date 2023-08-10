@@ -76,30 +76,13 @@ impl pallet_balances::Config for Test {
 	type ReserveIdentifier = ();
 }
 
-parameter_types! {
-	pub static MockRandom: H256 = Default::default();
-}
 
-impl Randomness<H256, u64> for MockRandom {
-	fn random(_subject: &[u8]) -> (H256, u64) {
-		(MockRandom::get(), 0)
-	}
-}
 
 parameter_types! {
-	pub const MaxClassMetadata: u32 = 0;
-	pub const MaxTokenMetadata: u32 = 0;
-}
-
-parameter_types! {
-	pub const DefaultDifficulty: u32 = 3;
-	pub const LettersPerChunk: u32 = 1000;
-    pub const TheParaId: u32 = 1;
 }
 
 impl Config for Test {
 	type Event = Event;
-	type Randomness = MockRandom;
 	type Currency = Balances;
 	type WeightInfo = ();
 }
@@ -107,8 +90,6 @@ impl Config for Test {
 
 pub const REFEREE_ID: [u8; 32] = [212,53,147,199,21,253,211,28,97,20,26,189,4,169,159,214,130,44,133,88,133,76,205,227,154,86,132,231,165,109,162,125];
 pub const WORKER_ID: [u8; 32] = [142,175,4,21,22,135,115,99,38,201,254,161,126,37,252,82,135,97,54,147,201,18,144,156,178,38,170,71,148,242,106,72];
-pub const EMPLOYER_ID: [u8; 32] = [254,101,113,125,173,4,71,215,21,246,96,160,165,132,17,222,80,155,66,230,239,184,55,95,86,47,88,165,84,213,134,14];
-pub const MALICIOUS_ID: [u8; 32] = [6,166,233,218,61,113,34,154,171,136,61,55,234,9,139,102,146,228,207,22,127,51,101,144,61,162,221,109,87,172,54,120];
 pub const INITIAL_BALANCE: u64 = 1000;
 pub const REFEREE_STAKE: u64 = 10;
 pub const PARA_ID: u32 = 1;
@@ -136,14 +117,6 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 			),
 			(
 				AccountId::from(Public::from_raw(WORKER_ID)).into_account(),
-				INITIAL_BALANCE,
-			),
-			(
-				AccountId::from(Public::from_raw(EMPLOYER_ID)).into_account(),
-				INITIAL_BALANCE,
-			),
-			(
-				AccountId::from(Public::from_raw(MALICIOUS_ID)).into_account(),
 				INITIAL_BALANCE,
 			),
 		],
