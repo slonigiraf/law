@@ -329,3 +329,51 @@ fn edit_balance_is_not_enough() {
         assert_eq!(new_price, LAW_PRICE);
     });
 }
+
+#[test]
+fn upvote_success() {
+    new_test_ext().execute_with(|| {
+        // Extract account creation for reuse
+        let creator = account_id_from_raw(CREATOR);
+        let editor = account_id_from_raw(EDITOR);
+
+        // Attempt to create the law
+        assert_ok!(LawModule::create(
+            Origin::signed(creator.clone()),
+            INITIAL_LAW_ID,
+            LAW_PRICE
+        ));
+
+        // Clear events
+        frame_system::Pallet::<Test>::reset_events();
+
+        // Attempt to upvote the law
+        let upvote_price = LAW_PRICE;
+        let pre_balance = <pallet_balances::Pallet<Test>>::total_balance(&editor);
+        assert_ok!(LawModule::upvote(
+            Origin::signed(editor.clone()),
+            INITIAL_LAW_ID,
+            upvote_price
+        ));
+
+        // Assert law was upvoted
+        let (updated_text, new_price) = LawModule::get_law(INITIAL_LAW_ID).unwrap();
+        assert_eq!(updated_text, INITIAL_LAW_ID);
+        assert_eq!(new_price, LAW_PRICE+upvote_price);
+
+        // Assert the balance was deducted
+        let post_balance = <pallet_balances::Pallet<Test>>::total_balance(&editor);
+        assert_eq!(post_balance, pre_balance - upvote_price);
+
+        // Check for emitted event
+        let events = frame_system::Pallet::<Test>::events();
+        assert_eq!(events.len(), 2);
+        assert_eq!(
+            events[1].event,
+            TestEvent::LawModule(letters::Event::<Test>::LawUpvoted(
+                INITIAL_LAW_ID,
+                upvote_price
+            ))
+        );
+    });
+}
