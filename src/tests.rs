@@ -653,3 +653,14 @@ fn remove_success() {
         );
     });
 }
+
+#[test]
+fn remove_missing_id() {
+    new_test_ext().execute_with(|| {
+        let creator = account_id_from_raw(CREATOR);
+        assert_noop!(
+            LawModule::remove(Origin::signed(creator.clone()), INITIAL_LAW_ID),
+            Error::<Test>::MissingId
+        );
+    });
+}
