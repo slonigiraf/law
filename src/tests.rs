@@ -1,6 +1,5 @@
 // Was generated with https://github.com/slonigiraf/law-testing
 use super::*;
-
 use crate as letters;
 use frame_support::{assert_noop, assert_ok, parameter_types};
 use sp_core::H256;
@@ -11,8 +10,16 @@ use sp_runtime::{
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
-
 pub type AccountId = <<Signature as Verify>::Signer as IdentifyAccount>::AccountId;
+
+
+pub const CREATOR: [u8; 32] = [212,53,147,199,21,253,211,28,97,20,26,189,4,169,159,214,130,44,133,88,133,76,205,227,154,86,132,231,165,109,162,125];
+pub const EDITOR: [u8; 32] = [142,175,4,21,22,135,115,99,38,201,254,161,126,37,252,82,135,97,54,147,201,18,144,156,178,38,170,71,148,242,106,72];
+pub const INITIAL_BALANCE: u64 = 1000;
+pub const LAW_PRICE: u64 = 10;
+pub const INITIAL_LAW_ID: [u8; 32] = [212,53,147,199,21,253,211,28,97,20,26,189,4,169,159,214,130,44,133,88,133,76,205,227,154,86,132,231,165,109,162,125];
+pub const INITIAL_LAW_TEXT: [u8; 32] = INITIAL_LAW_ID;
+pub const EDITED_LAW_TEXT: [u8; 32] = [142,175,4,21,22,135,115,99,38,201,254,161,126,37,252,82,135,97,54,147,201,18,144,156,178,38,170,71,148,242,106,72];
 
 // Configure a mock runtime to test the pallet.
 frame_support::construct_runtime!(
@@ -26,6 +33,12 @@ frame_support::construct_runtime!(
 		LawModule: letters::{Pallet, Call, Storage, Event<T>, Config},
 	}
 );
+
+// Helper Functions
+/// Convert a raw byte array into an AccountId.
+fn account_id_from_raw(bytes: [u8; 32]) -> AccountId {
+    AccountId::from(Public::from_raw(bytes)).into_account()
+}
 
 pub type TestEvent = Event;
 
@@ -87,14 +100,6 @@ impl Config for Test {
 	type WeightInfo = ();
 }
 
-pub const CREATOR: [u8; 32] = [212,53,147,199,21,253,211,28,97,20,26,189,4,169,159,214,130,44,133,88,133,76,205,227,154,86,132,231,165,109,162,125];
-pub const EDITOR: [u8; 32] = [142,175,4,21,22,135,115,99,38,201,254,161,126,37,252,82,135,97,54,147,201,18,144,156,178,38,170,71,148,242,106,72];
-pub const INITIAL_BALANCE: u64 = 1000;
-pub const LAW_PRICE: u64 = 10;
-pub const INITIAL_LAW_ID: [u8; 32] = [212,53,147,199,21,253,211,28,97,20,26,189,4,169,159,214,130,44,133,88,133,76,205,227,154,86,132,231,165,109,162,125];
-pub const INITIAL_LAW_TEXT: [u8; 32] = INITIAL_LAW_ID;
-pub const EDITED_LAW_TEXT: [u8; 32] = [142,175,4,21,22,135,115,99,38,201,254,161,126,37,252,82,135,97,54,147,201,18,144,156,178,38,170,71,148,242,106,72];
-
 // Build genesis storage according to the mock runtime.
 pub fn new_test_ext() -> sp_io::TestExternalities {
 	let mut t = frame_system::GenesisConfig::default()
@@ -104,11 +109,11 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 	pallet_balances::GenesisConfig::<Test> {
 		balances: vec![
 			(
-				AccountId::from(Public::from_raw(CREATOR)).into_account(),
+				account_id_from_raw(CREATOR),
 				INITIAL_BALANCE,
 			),
 			(
-				AccountId::from(Public::from_raw(EDITOR)).into_account(),
+				account_id_from_raw(EDITOR),
 				INITIAL_BALANCE,
 			),
 		],
@@ -133,7 +138,7 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 fn successful_creation() {
     new_test_ext().execute_with(|| {
         // Extract account creation for reuse
-        let creator = AccountId::from(Public::from_raw(CREATOR)).into_account();
+        let creator = account_id_from_raw(CREATOR);
         
         // Get initial balance
 		let initial_balance = <pallet_balances::Pallet<Test>>::total_balance(&creator);
@@ -170,15 +175,16 @@ fn successful_creation() {
 
 #[test]
 fn prohibit_creation_with_existing_id() {
+	let creator = account_id_from_raw(CREATOR);
     new_test_ext().execute_with(|| {
         assert_ok!(LawModule::create(
-            Origin::signed(AccountId::from(Public::from_raw(CREATOR)).into_account()),
+            Origin::signed(creator),
             INITIAL_LAW_ID,
             LAW_PRICE
         ));
 		assert_noop!(
             LawModule::create(
-				Origin::signed(AccountId::from(Public::from_raw(CREATOR)).into_account()),
+				Origin::signed(creator),
 				INITIAL_LAW_ID,
 				LAW_PRICE
 			),
@@ -191,8 +197,8 @@ fn prohibit_creation_with_existing_id() {
 fn successful_edit() {
     new_test_ext().execute_with(|| {
         // Extract account creation for reuse
-        let creator = AccountId::from(Public::from_raw(CREATOR)).into_account();
-		let editor = AccountId::from(Public::from_raw(EDITOR)).into_account();
+        let creator = account_id_from_raw(CREATOR);
+		let editor = account_id_from_raw(EDITOR);
         
         // Attempt to create the law
         assert_ok!(LawModule::create(
@@ -237,8 +243,8 @@ fn successful_edit() {
 fn edit_balance_is_not_enough() {
     new_test_ext().execute_with(|| {
         // Extract account creation for reuse
-        let creator = AccountId::from(Public::from_raw(CREATOR)).into_account();
-        let editor = AccountId::from(Public::from_raw(EDITOR)).into_account();
+        let creator = account_id_from_raw(CREATOR);
+        let editor = account_id_from_raw(EDITOR);
 
         // Attempt to create the law
         assert_ok!(LawModule::create(
