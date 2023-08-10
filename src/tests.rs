@@ -664,3 +664,33 @@ fn remove_missing_id() {
         );
     });
 }
+
+#[test]
+fn remove_balance_is_not_enough() {
+    new_test_ext().execute_with(|| {
+        // Extract account creation for reuse
+        let creator = account_id_from_raw(CREATOR);
+
+		let creation_price = INITIAL_BALANCE - 1;
+
+        // Attempt to create the law
+        assert_ok!(LawModule::create(
+            Origin::signed(creator.clone()),
+            INITIAL_LAW_ID,
+            creation_price
+        ));
+
+        // Attempt to remove the law
+        
+        assert_noop!(
+            LawModule::remove(
+                Origin::signed(creator.clone()),
+                INITIAL_LAW_ID
+            ),
+            Error::<Test>::BalanceIsNotEnough
+        );
+
+        // Assert law was not removed
+        assert_eq!(LawModule::law_exists(INITIAL_LAW_ID), true);
+    });
+}
