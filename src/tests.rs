@@ -525,3 +525,51 @@ fn downvote_missing_id() {
         );
     });
 }
+
+#[test]
+fn downvote_underflow() {
+    new_test_ext().execute_with(|| {
+        // Extract account creation for reuse
+        let creator = account_id_from_raw(CREATOR);
+        let editor = account_id_from_raw(EDITOR);
+
+        // Attempt to create the law
+        assert_ok!(LawModule::create(
+            Origin::signed(creator.clone()),
+            INITIAL_LAW_ID,
+            LAW_PRICE
+        ));
+
+        // Clear events
+        frame_system::Pallet::<Test>::reset_events();
+
+        // Attempt to downvote the law
+        let downvote_price = INITIAL_BALANCE;
+        let pre_balance = <pallet_balances::Pallet<Test>>::total_balance(&editor);
+        assert_ok!(LawModule::downvote(
+            Origin::signed(editor.clone()),
+            INITIAL_LAW_ID,
+            downvote_price
+        ));
+
+        // Assert law was downvoted
+        let (updated_text, new_price) = LawModule::get_law(INITIAL_LAW_ID).unwrap();
+        assert_eq!(updated_text, INITIAL_LAW_ID);
+        assert_eq!(new_price, 0);
+
+        // Assert the balance was deducted
+        let post_balance = <pallet_balances::Pallet<Test>>::total_balance(&editor);
+        assert_eq!(post_balance, INITIAL_BALANCE - LAW_PRICE);
+
+        // Check for emitted event
+        let events = frame_system::Pallet::<Test>::events();
+        assert_eq!(events.len(), 2);
+        assert_eq!(
+            events[1].event,
+            TestEvent::LawModule(letters::Event::<Test>::LawDownvoted(
+                INITIAL_LAW_ID,
+                LAW_PRICE
+            ))
+        );
+    });
+}
