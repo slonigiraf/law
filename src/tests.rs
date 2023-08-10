@@ -414,7 +414,6 @@ fn upvote_price_overflow() {
     new_test_ext().execute_with(|| {
         // Extract account creation for reuse
         let creator = account_id_from_raw(CREATOR);
-        let editor = account_id_from_raw(EDITOR);
 
         // Attempt to create the law
         assert_ok!(LawModule::create(
@@ -433,6 +432,37 @@ fn upvote_price_overflow() {
 				upvote_price
 			),
             Error::<Test>::PriceOverflow
+        );
+
+		// Assert law was not upvoted
+        let (_, new_price) = LawModule::get_law(INITIAL_LAW_ID).unwrap();
+        assert_eq!(new_price, LAW_PRICE);
+    });
+}
+
+#[test]
+fn upvote_balance_is_not_enough() {
+    new_test_ext().execute_with(|| {
+        // Extract account creation for reuse
+        let creator = account_id_from_raw(CREATOR);
+
+        // Attempt to create the law
+        assert_ok!(LawModule::create(
+            Origin::signed(creator.clone()),
+            INITIAL_LAW_ID,
+            LAW_PRICE
+        ));
+
+        // Attempt to upvote the law
+        let upvote_price = INITIAL_BALANCE+1;
+
+        assert_noop!(
+            LawModule::upvote(
+				Origin::signed(creator.clone()),
+				INITIAL_LAW_ID,
+				upvote_price
+			),
+            Error::<Test>::BalanceIsNotEnough
         );
 
 		// Assert law was not upvoted
