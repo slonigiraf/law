@@ -95,7 +95,6 @@ pub const INITIAL_LAW_ID: [u8; 32] = [212,53,147,199,21,253,211,28,97,20,26,189,
 pub const INITIAL_LAW_TEXT: [u8; 32] = INITIAL_LAW_ID;
 pub const EDITED_LAW_TEXT: [u8; 32] = [142,175,4,21,22,135,115,99,38,201,254,161,126,37,252,82,135,97,54,147,201,18,144,156,178,38,170,71,148,242,106,72];
 
-
 // Build genesis storage according to the mock runtime.
 pub fn new_test_ext() -> sp_io::TestExternalities {
 	let mut t = frame_system::GenesisConfig::default()
@@ -134,10 +133,10 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 fn successful_creation() {
     new_test_ext().execute_with(|| {
         // Extract account creation for reuse
-        let referee_account = AccountId::from(Public::from_raw(CREATOR)).into_account();
+        let creator = AccountId::from(Public::from_raw(CREATOR)).into_account();
         
         // Get initial balance
-		let initial_balance = <pallet_balances::Pallet<Test>>::total_balance(&referee_account);
+		let initial_balance = <pallet_balances::Pallet<Test>>::total_balance(&creator);
 
 		// Assert law does not exist initially
 		assert_eq!(LawModule::law_exists(INITIAL_LAW_ID), false);
@@ -147,14 +146,14 @@ fn successful_creation() {
 
         // Attempt to create the law
         assert_ok!(LawModule::create(
-            Origin::signed(referee_account.clone()),
+            Origin::signed(creator.clone()),
             INITIAL_LAW_ID,
             LAW_PRICE
         ));
 
         // Assert law now exists and the balance was deducted
 		assert_eq!(LawModule::law_exists(INITIAL_LAW_ID), true);
-		let post_balance = <pallet_balances::Pallet<Test>>::total_balance(&referee_account);
+		let post_balance = <pallet_balances::Pallet<Test>>::total_balance(&creator);
         assert_eq!(post_balance, initial_balance - LAW_PRICE);
 
 		
@@ -192,11 +191,12 @@ fn prohibit_creation_with_existing_id() {
 fn successful_edit() {
     new_test_ext().execute_with(|| {
         // Extract account creation for reuse
-        let referee_account = AccountId::from(Public::from_raw(CREATOR)).into_account();
+        let creator = AccountId::from(Public::from_raw(CREATOR)).into_account();
+		let editor = AccountId::from(Public::from_raw(EDITOR)).into_account();
         
         // Attempt to create the law
         assert_ok!(LawModule::create(
-            Origin::signed(referee_account.clone()),
+            Origin::signed(creator.clone()),
             INITIAL_LAW_ID,
             LAW_PRICE
         ));
@@ -206,9 +206,9 @@ fn successful_edit() {
 
 		// Attempt to edit the law
 		let price_for_edit = LAW_PRICE;
-		let pre_balance = <pallet_balances::Pallet<Test>>::total_balance(&referee_account);
+		let pre_balance = <pallet_balances::Pallet<Test>>::total_balance(&editor);
         assert_ok!(LawModule::edit(
-            Origin::signed(referee_account.clone()),
+            Origin::signed(editor.clone()),
             INITIAL_LAW_ID,
 			EDITED_LAW_TEXT,
             price_for_edit
@@ -220,7 +220,7 @@ fn successful_edit() {
 		assert_eq!(new_price, price_for_edit);
 		
 		// Assert the balance was deducted
-		let post_balance = <pallet_balances::Pallet<Test>>::total_balance(&referee_account);
+		let post_balance = <pallet_balances::Pallet<Test>>::total_balance(&editor);
         assert_eq!(post_balance, pre_balance - price_for_edit);
 
 		// Check for emitted event
@@ -237,11 +237,11 @@ fn successful_edit() {
 fn edit_balance_is_not_enough() {
     new_test_ext().execute_with(|| {
         // Extract account creation for reuse
-        let referee_account = AccountId::from(Public::from_raw(CREATOR)).into_account();
+        let creator = AccountId::from(Public::from_raw(CREATOR)).into_account();
         
         // Attempt to create the law
         assert_ok!(LawModule::create(
-            Origin::signed(referee_account.clone()),
+            Origin::signed(creator.clone()),
             INITIAL_LAW_ID,
             LAW_PRICE
         ));
@@ -253,7 +253,7 @@ fn edit_balance_is_not_enough() {
 		let price_for_edit = LAW_PRICE-1;
 		assert_noop!(
             LawModule::edit(
-				Origin::signed(referee_account.clone()),
+				Origin::signed(creator.clone()),
 				INITIAL_LAW_ID,
 				EDITED_LAW_TEXT,
 				price_for_edit
