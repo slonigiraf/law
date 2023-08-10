@@ -408,3 +408,35 @@ fn upvote_missing_id() {
         );
     });
 }
+
+#[test]
+fn upvote_price_overflow() {
+    new_test_ext().execute_with(|| {
+        // Extract account creation for reuse
+        let creator = account_id_from_raw(CREATOR);
+        let editor = account_id_from_raw(EDITOR);
+
+        // Attempt to create the law
+        assert_ok!(LawModule::create(
+            Origin::signed(creator.clone()),
+            INITIAL_LAW_ID,
+            LAW_PRICE
+        ));
+
+        // Attempt to upvote the law
+        let upvote_price = std::u64::MAX;
+
+        assert_noop!(
+            LawModule::upvote(
+				Origin::signed(creator.clone()),
+				INITIAL_LAW_ID,
+				upvote_price
+			),
+            Error::<Test>::PriceOverflow
+        );
+
+		// Assert law was not upvoted
+        let (_, new_price) = LawModule::get_law(INITIAL_LAW_ID).unwrap();
+        assert_eq!(new_price, LAW_PRICE);
+    });
+}

@@ -8,7 +8,7 @@ use frame_support::{
 use frame_system::pallet_prelude::*;
 pub use pallet::*;
 use sp_core::sr25519::{Public, Signature};
-use sp_runtime::traits::{IdentifyAccount, Verify};
+use sp_runtime::traits::{IdentifyAccount, Verify, CheckedAdd};
 use sp_std::prelude::*;
 
 #[cfg(feature = "runtime-benchmarks")]
@@ -134,8 +134,7 @@ pub mod pallet {
         ) -> DispatchResultWithPostInfo {
             let sender = ensure_signed(origin)?;
             let (text, old_price) = Laws::<T>::get(&id).ok_or(Error::<T>::MissingId)?;
-            let new_price = old_price + price;
-            ensure!(new_price > old_price, Error::<T>::PriceOverflow);
+            let new_price = old_price.checked_add(&price).ok_or(Error::<T>::PriceOverflow)?;
             <T as Config>::Currency::withdraw(
                 &sender,
                 price,
