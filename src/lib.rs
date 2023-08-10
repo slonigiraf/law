@@ -2,7 +2,7 @@
 
 use frame_support::{
 	pallet_prelude::*,
-	traits::{Currency, ExistenceRequirement, WithdrawReasons, Randomness},
+	traits::{Currency, ExistenceRequirement, WithdrawReasons},
 	transactional,
 };
 use frame_system::pallet_prelude::*;
@@ -24,10 +24,6 @@ pub type AccountId = <<Signature as Verify>::Signer as IdentifyAccount>::Account
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
-	use frame_support::pallet_prelude::*;
-	use frame_system::pallet_prelude::*;
-	use scale_info::TypeInfo;
-
 	/// Configure the pallet by specifying the parameters and types it depends on.
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
