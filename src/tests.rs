@@ -102,9 +102,6 @@ impl Config for Test {
 	type Randomness = MockRandom;
 	type Currency = Balances;
 	type WeightInfo = ();
-	type DefaultDifficulty = DefaultDifficulty;
-	type LettersPerChunk = LettersPerChunk;
-    type TheParaId = TheParaId;
 }
 
 
@@ -251,7 +248,7 @@ fn successful_edit() {
             price_for_edit
         ));
 
-		// TODO: Assert law was edited
+		// Assert law was edited
 		let (updated_text, new_price) = LawModule::get_law(INITIAL_LAW_ID).unwrap();
 		assert_eq!(updated_text, EDITED_LAW_ID);
 		assert_eq!(new_price, price_for_edit);
