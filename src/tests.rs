@@ -266,6 +266,22 @@ fn edit_success() {
 }
 
 #[test]
+fn edit_missing_id() {
+    new_test_ext().execute_with(|| {
+        let editor = account_id_from_raw(EDITOR);
+		assert_noop!(
+            LawModule::edit(
+				Origin::signed(editor.clone()),
+				INITIAL_LAW_ID,
+				EDITED_LAW_TEXT,
+				LAW_PRICE
+			),
+            Error::<Test>::MissingId
+        );
+    });
+}
+
+#[test]
 fn edit_new_price_is_low() {
     new_test_ext().execute_with(|| {
         // Extract account creation for reuse
@@ -374,6 +390,21 @@ fn upvote_success() {
                 INITIAL_LAW_ID,
                 upvote_price
             ))
+        );
+    });
+}
+
+#[test]
+fn upvote_missing_id() {
+    new_test_ext().execute_with(|| {
+        let creator = account_id_from_raw(CREATOR);
+		assert_noop!(
+            LawModule::upvote(
+				Origin::signed(creator.clone()),
+				INITIAL_LAW_ID,
+				LAW_PRICE
+			),
+            Error::<Test>::MissingId
         );
     });
 }
