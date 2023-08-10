@@ -535,3 +535,78 @@ fn prohibit_creation_with_existing_id() {
         );
     });
 }
+
+#[test]
+fn successful_edit() {
+    new_test_ext().execute_with(|| {
+        // Extract account creation for reuse
+        let referee_account = AccountId::from(Public::from_raw(REFEREE_ID)).into_account();
+        
+        // Attempt to create the law
+        assert_ok!(LawModule::create(
+            Origin::signed(referee_account.clone()),
+            INITIAL_LAW_ID,
+            REFEREE_STAKE
+        ));
+
+        // Clear events
+        frame_system::Pallet::<Test>::reset_events();
+
+		// Attempt to edit the law
+		let price_for_edit = REFEREE_STAKE;
+		let pre_balance = <pallet_balances::Pallet<Test>>::total_balance(&referee_account);
+        assert_ok!(LawModule::edit(
+            Origin::signed(referee_account.clone()),
+            INITIAL_LAW_ID,
+			EDITED_LAW_ID,
+            price_for_edit
+        ));
+
+		// TODO: Assert law was edited
+		let (updated_text, new_price) = LawModule::get_law(INITIAL_LAW_ID).unwrap();
+		assert_eq!(updated_text, EDITED_LAW_ID);
+		assert_eq!(new_price, price_for_edit);
+		
+		// Assert the balance was deducted
+		let post_balance = <pallet_balances::Pallet<Test>>::total_balance(&referee_account);
+        assert_eq!(post_balance, pre_balance - price_for_edit);
+
+		// Check for emitted event
+        let events = frame_system::Pallet::<Test>::events();
+        assert_eq!(events.len(), 2);
+        assert_eq!(
+            events[1].event,
+            TestEvent::LawModule(letters::Event::<Test>::LawEdited(INITIAL_LAW_ID, INITIAL_LAW_ID, EDITED_LAW_ID, price_for_edit))
+        );
+    });
+}
+
+#[test]
+fn edit_balance_is_not_enough() {
+    new_test_ext().execute_with(|| {
+        // Extract account creation for reuse
+        let referee_account = AccountId::from(Public::from_raw(REFEREE_ID)).into_account();
+        
+        // Attempt to create the law
+        assert_ok!(LawModule::create(
+            Origin::signed(referee_account.clone()),
+            INITIAL_LAW_ID,
+            REFEREE_STAKE
+        ));
+
+        // Clear events
+        frame_system::Pallet::<Test>::reset_events();
+
+		// Attempt to create the law
+		let price_for_edit = REFEREE_STAKE-1;
+		assert_noop!(
+            LawModule::edit(
+				Origin::signed(referee_account.clone()),
+				INITIAL_LAW_ID,
+				EDITED_LAW_ID,
+				price_for_edit
+			),
+            Error::<Test>::NewPriceIsLow
+        );
+    });
+}
