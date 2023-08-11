@@ -45,32 +45,32 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Laws Laws (r:1 w:1)
         fn create() -> Weight {
                 (47_000_000 as Weight)
-                        .saturating_add(RocksDbWeight::get().reads(1 as Weight))
-                        .saturating_add(RocksDbWeight::get().writes(1 as Weight))
+                        .saturating_add(T::DbWeight::get().reads(1 as Weight))
+                        .saturating_add(T::DbWeight::get().writes(1 as Weight))
         }
         // Storage: Laws Laws (r:1 w:1)
         fn edit() -> Weight {
                 (49_000_000 as Weight)
-                        .saturating_add(RocksDbWeight::get().reads(1 as Weight))
-                        .saturating_add(RocksDbWeight::get().writes(1 as Weight))
+                        .saturating_add(T::DbWeight::get().reads(1 as Weight))
+                        .saturating_add(T::DbWeight::get().writes(1 as Weight))
         }
         // Storage: Laws Laws (r:1 w:1)
         fn upvote() -> Weight {
                 (49_000_000 as Weight)
-                        .saturating_add(RocksDbWeight::get().reads(1 as Weight))
-                        .saturating_add(RocksDbWeight::get().writes(1 as Weight))
+                        .saturating_add(T::DbWeight::get().reads(1 as Weight))
+                        .saturating_add(T::DbWeight::get().writes(1 as Weight))
         }
         // Storage: Laws Laws (r:1 w:1)
         fn downvote() -> Weight {
                 (48_000_000 as Weight)
-                        .saturating_add(RocksDbWeight::get().reads(1 as Weight))
-                        .saturating_add(RocksDbWeight::get().writes(1 as Weight))
+                        .saturating_add(T::DbWeight::get().reads(1 as Weight))
+                        .saturating_add(T::DbWeight::get().writes(1 as Weight))
         }
         // Storage: Laws Laws (r:1 w:1)
         fn remove() -> Weight {
                 (47_000_000 as Weight)
-                        .saturating_add(RocksDbWeight::get().reads(1 as Weight))
-                        .saturating_add(RocksDbWeight::get().writes(1 as Weight))
+                        .saturating_add(T::DbWeight::get().reads(1 as Weight))
+                        .saturating_add(T::DbWeight::get().writes(1 as Weight))
         }
 }
 
