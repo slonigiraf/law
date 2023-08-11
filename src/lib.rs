@@ -53,10 +53,7 @@ pub mod pallet {
 
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
-    // TODO: remove this
-    // #[pallet::metadata(
-    // 	T::AccountId = "AccountId", LetterIndexOf<T> = "LetterIndex", Option<BalanceOf<T>> = "Option<Balance>", BalanceOf<T> = "Balance",
-    // )]
+
     pub enum Event<T: Config> {
         LawCreated([u8; 32], BalanceOf<T>),
         LawEdited([u8; 32], [u8; 32], [u8; 32], BalanceOf<T>),
