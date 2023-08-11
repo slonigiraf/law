@@ -1187,7 +1187,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-law"
+name = "pallet-laws"
 version = "0.1.0"
 dependencies = [
  "frame-benchmarking",

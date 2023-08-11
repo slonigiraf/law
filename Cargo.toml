@@ -1,5 +1,5 @@
 [package]
-name = "pallet-law"
+name = "pallet-laws"
 version = "0.1.0"
 authors = ["Denis Reshetov"]
 edition = "2018"
