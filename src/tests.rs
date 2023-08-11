@@ -310,7 +310,7 @@ fn edit_new_price_is_low() {
             Error::<Test>::NewPriceIsLow
         );
         let (updated_text, new_price) = LawModule::get_law(INITIAL_LAW_ID).unwrap();
-        assert_eq!(updated_text, INITIAL_LAW_ID);
+        assert_eq!(updated_text, INITIAL_LAW_TEXT);
         assert_eq!(new_price, LAW_PRICE);
     });
 }
@@ -341,7 +341,7 @@ fn edit_balance_is_not_enough() {
             Error::<Test>::BalanceIsNotEnough
         );
         let (updated_text, new_price) = LawModule::get_law(INITIAL_LAW_ID).unwrap();
-        assert_eq!(updated_text, INITIAL_LAW_ID);
+        assert_eq!(updated_text, INITIAL_LAW_TEXT);
         assert_eq!(new_price, LAW_PRICE);
     });
 }
@@ -374,7 +374,7 @@ fn upvote_success() {
 
         // Assert law was upvoted
         let (updated_text, new_price) = LawModule::get_law(INITIAL_LAW_ID).unwrap();
-        assert_eq!(updated_text, INITIAL_LAW_ID);
+        assert_eq!(updated_text, INITIAL_LAW_TEXT);
         assert_eq!(new_price, LAW_PRICE + upvote_price);
 
         // Assert the balance was deducted
@@ -495,7 +495,7 @@ fn downvote_success() {
 
         // Assert law was downvoted
         let (updated_text, new_price) = LawModule::get_law(INITIAL_LAW_ID).unwrap();
-        assert_eq!(updated_text, INITIAL_LAW_ID);
+        assert_eq!(updated_text, INITIAL_LAW_TEXT);
         assert_eq!(new_price, LAW_PRICE - downvote_price);
 
         // Assert the balance was deducted
@@ -554,12 +554,12 @@ fn downvote_underflow() {
 
         // Assert law was downvoted
         let (updated_text, new_price) = LawModule::get_law(INITIAL_LAW_ID).unwrap();
-        assert_eq!(updated_text, INITIAL_LAW_ID);
+        assert_eq!(updated_text, INITIAL_LAW_TEXT);
         assert_eq!(new_price, 0);
 
         // Assert the balance was deducted
         let post_balance = <pallet_balances::Pallet<Test>>::total_balance(&editor);
-        assert_eq!(post_balance, INITIAL_BALANCE - LAW_PRICE);
+        assert_eq!(post_balance, pre_balance - LAW_PRICE);
 
         // Check for emitted event
         let events = frame_system::Pallet::<Test>::events();
@@ -627,7 +627,6 @@ fn remove_success() {
         frame_system::Pallet::<Test>::reset_events();
 
         // Attempt to remove the law
-        let upvote_price = LAW_PRICE;
         let pre_balance = <pallet_balances::Pallet<Test>>::total_balance(&editor);
         assert_ok!(LawModule::remove(
             Origin::signed(editor.clone()),

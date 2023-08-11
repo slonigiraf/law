@@ -81,7 +81,7 @@ pub mod pallet {
     #[pallet::call]
     impl<T: Config> Pallet<T> {
         // Create a law functionality
-        #[pallet::weight(T::WeightInfo::reimburse())] //TODO: change
+        #[pallet::weight(T::WeightInfo::create())]
         #[transactional]
         pub fn create(
             origin: OriginFor<T>,
@@ -102,7 +102,7 @@ pub mod pallet {
             Ok(().into())
         }
         // Edit a law functionality
-        #[pallet::weight(10_000)] //TODO: change
+        #[pallet::weight(T::WeightInfo::edit())]
         #[transactional]
         pub fn edit(
             origin: OriginFor<T>,
@@ -125,7 +125,7 @@ pub mod pallet {
             Ok(().into())
         }
 
-        #[pallet::weight(10_000)] //TODO: change
+        #[pallet::weight(T::WeightInfo::upvote())]
         #[transactional]
         pub fn upvote(
             origin: OriginFor<T>,
@@ -147,7 +147,7 @@ pub mod pallet {
             Ok(().into())
         }
 
-        #[pallet::weight(10_000)] //TODO: change
+        #[pallet::weight(T::WeightInfo::downvote())]
         #[transactional]
         pub fn downvote(
             origin: OriginFor<T>,
@@ -177,7 +177,7 @@ pub mod pallet {
             Ok(().into())
         }
 
-        #[pallet::weight(10_000)] //TODO: change
+        #[pallet::weight(T::WeightInfo::remove())]
         #[transactional]
         pub fn remove(origin: OriginFor<T>, id: [u8; 32]) -> DispatchResultWithPostInfo {
             let sender = ensure_signed(origin)?;
