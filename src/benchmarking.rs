@@ -17,18 +17,23 @@ pub const EDITED_LAW_TEXT: [u8; 32] = [
 benchmarks! {
 	create {
 		let caller = whitelisted_caller();
+		let ask_price: BalanceOf<T> = LAW_PRICE.into();
 	}: _(RawOrigin::Signed(caller), INITIAL_LAW_ID, LAW_PRICE)
 	edit {
 		let caller = whitelisted_caller();
+		let ask_price: BalanceOf<T> = LAW_PRICE.into();
 	}: _(RawOrigin::Signed(caller), INITIAL_LAW_ID, EDITED_LAW_TEXT, LAW_PRICE)
 	upvote {
 		let caller = whitelisted_caller();
+		let ask_price: BalanceOf<T> = LAW_PRICE.into();
 	}: _(RawOrigin::Signed(caller), INITIAL_LAW_ID, LAW_PRICE)
 	downvote {
 		let caller = whitelisted_caller();
+		let ask_price: BalanceOf<T> = LAW_PRICE.into();
 	}: _(RawOrigin::Signed(caller), INITIAL_LAW_ID, LAW_PRICE)
 	remove {
 		let caller = whitelisted_caller();
+		let ask_price: BalanceOf<T> = LAW_PRICE.into();
 	}: _(RawOrigin::Signed(caller), INITIAL_LAW_ID)
 }
 
