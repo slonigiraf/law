@@ -1,6 +1,6 @@
 // Was generated with https://github.com/slonigiraf/law-testing
 use super::*;
-use crate as letters;
+use crate as laws;
 use frame_support::{assert_noop, assert_ok, parameter_types};
 use sp_core::H256;
 use sp_runtime::{
@@ -41,7 +41,7 @@ frame_support::construct_runtime!(
     {
         System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
-        LawModule: letters::{Pallet, Call, Storage, Event<T>, Config},
+        LawModule: laws::{Pallet, Call, Storage, Event<T>, Config},
     }
 );
 
@@ -178,7 +178,7 @@ fn creation_success() {
         assert_eq!(events.len(), 2);
         assert_eq!(
             events[1].event,
-            TestEvent::LawModule(letters::Event::<Test>::LawCreated(
+            TestEvent::LawModule(laws::Event::<Test>::LawCreated(
                 INITIAL_LAW_ID,
                 LAW_PRICE
             ))
@@ -255,7 +255,7 @@ fn edit_success() {
         assert_eq!(events.len(), 2);
         assert_eq!(
             events[1].event,
-            TestEvent::LawModule(letters::Event::<Test>::LawEdited(
+            TestEvent::LawModule(laws::Event::<Test>::LawEdited(
                 INITIAL_LAW_ID,
                 INITIAL_LAW_ID,
                 EDITED_LAW_TEXT,
@@ -386,7 +386,7 @@ fn upvote_success() {
         assert_eq!(events.len(), 2);
         assert_eq!(
             events[1].event,
-            TestEvent::LawModule(letters::Event::<Test>::LawUpvoted(
+            TestEvent::LawModule(laws::Event::<Test>::LawUpvoted(
                 INITIAL_LAW_ID,
                 upvote_price
             ))
@@ -507,7 +507,7 @@ fn downvote_success() {
         assert_eq!(events.len(), 2);
         assert_eq!(
             events[1].event,
-            TestEvent::LawModule(letters::Event::<Test>::LawDownvoted(
+            TestEvent::LawModule(laws::Event::<Test>::LawDownvoted(
                 INITIAL_LAW_ID,
                 downvote_price
             ))
@@ -566,7 +566,7 @@ fn downvote_underflow() {
         assert_eq!(events.len(), 2);
         assert_eq!(
             events[1].event,
-            TestEvent::LawModule(letters::Event::<Test>::LawDownvoted(
+            TestEvent::LawModule(laws::Event::<Test>::LawDownvoted(
                 INITIAL_LAW_ID,
                 LAW_PRICE
             ))
@@ -646,7 +646,7 @@ fn remove_success() {
         assert_eq!(events.len(), 2);
         assert_eq!(
             events[1].event,
-            TestEvent::LawModule(letters::Event::<Test>::LawRemoved(
+            TestEvent::LawModule(laws::Event::<Test>::LawRemoved(
                 INITIAL_LAW_ID,
                 LAW_PRICE
             ))

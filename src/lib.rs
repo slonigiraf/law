@@ -81,7 +81,7 @@ pub mod pallet {
     #[pallet::call]
     impl<T: Config> Pallet<T> {
         // Create a law functionality
-        #[pallet::weight(10_000)] //TODO: change
+        #[pallet::weight(T::WeightInfo::reimburse())] //TODO: change
         #[transactional]
         pub fn create(
             origin: OriginFor<T>,
