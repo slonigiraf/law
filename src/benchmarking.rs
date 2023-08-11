@@ -36,6 +36,7 @@ benchmarks! {
 	}: _(RawOrigin::Signed(caller), INITIAL_LAW_ID, law_price)
 	remove {
 		let caller = whitelisted_caller();
+		let law_price: BalanceOf<T> = LAW_PRICE.into();
 		Pallet::<T>::create(RawOrigin::Signed(caller.clone()).into(), INITIAL_LAW_ID, law_price)?;
 	}: _(RawOrigin::Signed(caller), INITIAL_LAW_ID)
 }
