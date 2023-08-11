@@ -4,6 +4,7 @@ use frame_benchmarking::{benchmarks, impl_benchmark_test_suite, whitelisted_call
 use frame_system::RawOrigin;
 
 pub const LAW_PRICE: u32 = 10;
+pub const INITIAL_BALANCE: u32 = 1000;
 pub const INITIAL_LAW_ID: [u8; 32] = [
     212, 53, 147, 199, 21, 253, 211, 28, 97, 20, 26, 189, 4, 169, 159, 214, 130, 44, 133, 88, 133,
     76, 205, 227, 154, 86, 132, 231, 165, 109, 162, 125,
@@ -17,25 +18,35 @@ pub const EDITED_LAW_TEXT: [u8; 32] = [
 benchmarks! {
 	create {
 		let caller: T::AccountId = whitelisted_caller();
+		let balance_to_add: BalanceOf<T> = INITIAL_BALANCE.into();
+		<T as Config>::Currency::deposit_creating(&caller, balance_to_add);
 		let law_price: BalanceOf<T> = LAW_PRICE.into();
 	}: _(RawOrigin::Signed(caller), INITIAL_LAW_ID, law_price)
 	edit {
 		let caller: T::AccountId = whitelisted_caller();
+		let balance_to_add: BalanceOf<T> = INITIAL_BALANCE.into();
+		<T as Config>::Currency::deposit_creating(&caller, balance_to_add);
 		let law_price: BalanceOf<T> = LAW_PRICE.into();
 		Pallet::<T>::create(RawOrigin::Signed(caller.clone()).into(), INITIAL_LAW_ID, law_price)?;
 	}: _(RawOrigin::Signed(caller), INITIAL_LAW_ID, EDITED_LAW_TEXT, law_price)
 	upvote {
 		let caller: T::AccountId = whitelisted_caller();
+		let balance_to_add: BalanceOf<T> = INITIAL_BALANCE.into();
+		<T as Config>::Currency::deposit_creating(&caller, balance_to_add);
 		let law_price: BalanceOf<T> = LAW_PRICE.into();
 		Pallet::<T>::create(RawOrigin::Signed(caller.clone()).into(), INITIAL_LAW_ID, law_price)?;
 	}: _(RawOrigin::Signed(caller), INITIAL_LAW_ID, law_price)
 	downvote {
 		let caller: T::AccountId = whitelisted_caller();
+		let balance_to_add: BalanceOf<T> = INITIAL_BALANCE.into();
+		<T as Config>::Currency::deposit_creating(&caller, balance_to_add);
 		let law_price: BalanceOf<T> = LAW_PRICE.into();
 		Pallet::<T>::create(RawOrigin::Signed(caller.clone()).into(), INITIAL_LAW_ID, law_price)?;
 	}: _(RawOrigin::Signed(caller), INITIAL_LAW_ID, law_price)
 	remove {
 		let caller: T::AccountId = whitelisted_caller();
+		let balance_to_add: BalanceOf<T> = INITIAL_BALANCE.into();
+		<T as Config>::Currency::deposit_creating(&caller, balance_to_add);
 		let law_price: BalanceOf<T> = LAW_PRICE.into();
 		Pallet::<T>::create(RawOrigin::Signed(caller.clone()).into(), INITIAL_LAW_ID, law_price)?;
 	}: _(RawOrigin::Signed(caller), INITIAL_LAW_ID)
