@@ -17,23 +17,22 @@ pub const EDITED_LAW_TEXT: [u8; 32] = [
 benchmarks! {
 	create {
 		let caller = whitelisted_caller();
-		let ask_price: BalanceOf<T> = LAW_PRICE.into();
-	}: _(RawOrigin::Signed(caller), INITIAL_LAW_ID, LAW_PRICE)
+		let law_price: BalanceOf<T> = 0u32.into();
+	}: _(RawOrigin::Signed(caller), INITIAL_LAW_ID, law_price)
 	edit {
 		let caller = whitelisted_caller();
-		let ask_price: BalanceOf<T> = LAW_PRICE.into();
-	}: _(RawOrigin::Signed(caller), INITIAL_LAW_ID, EDITED_LAW_TEXT, LAW_PRICE)
+		let law_price: BalanceOf<T> = 0u32.into();
+	}: _(RawOrigin::Signed(caller), INITIAL_LAW_ID, EDITED_LAW_TEXT, law_price)
 	upvote {
 		let caller = whitelisted_caller();
-		let ask_price: BalanceOf<T> = LAW_PRICE.into();
-	}: _(RawOrigin::Signed(caller), INITIAL_LAW_ID, LAW_PRICE)
+		let law_price: BalanceOf<T> = 0u32.into();
+	}: _(RawOrigin::Signed(caller), INITIAL_LAW_ID, law_price)
 	downvote {
 		let caller = whitelisted_caller();
-		let ask_price: BalanceOf<T> = LAW_PRICE.into();
-	}: _(RawOrigin::Signed(caller), INITIAL_LAW_ID, LAW_PRICE)
+		let law_price: BalanceOf<T> = 0u32.into();
+	}: _(RawOrigin::Signed(caller), INITIAL_LAW_ID, law_price)
 	remove {
 		let caller = whitelisted_caller();
-		let ask_price: BalanceOf<T> = LAW_PRICE.into();
 	}: _(RawOrigin::Signed(caller), INITIAL_LAW_ID)
 }
 
