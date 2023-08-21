@@ -154,10 +154,12 @@ pub mod pallet {
         pub fn downvote(
             origin: OriginFor<T>,
             id: [u8; 32],
+            current_text: [u8; 32],
             price: BalanceOf<T>,
         ) -> DispatchResultWithPostInfo {
             let sender = ensure_signed(origin)?;
             let (text, old_price) = Laws::<T>::get(&id).ok_or(Error::<T>::MissingId)?;
+            ensure!(text == current_text, Error::<T>::OutdatedText);
             let mut new_price = old_price;
             let mut payment = price;
             if price < old_price {

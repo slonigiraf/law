@@ -561,6 +561,7 @@ fn downvote_success() {
         assert_ok!(LawModule::downvote(
             Origin::signed(editor.clone()),
             INITIAL_LAW_ID,
+            INITIAL_LAW_ID,
             downvote_price
         ));
 
@@ -591,7 +592,7 @@ fn downvote_missing_id() {
     new_test_ext().execute_with(|| {
         let creator = account_id_from_raw(CREATOR);
         assert_noop!(
-            LawModule::downvote(Origin::signed(creator.clone()), INITIAL_LAW_ID, LAW_PRICE),
+            LawModule::downvote(Origin::signed(creator.clone()), INITIAL_LAW_ID, INITIAL_LAW_ID, LAW_PRICE),
             Error::<Test>::MissingId
         );
     });
@@ -619,6 +620,7 @@ fn downvote_underflow() {
         let pre_balance = <pallet_balances::Pallet<Test>>::total_balance(&editor);
         assert_ok!(LawModule::downvote(
             Origin::signed(editor.clone()),
+            INITIAL_LAW_ID,
             INITIAL_LAW_ID,
             downvote_price
         ));
@@ -667,6 +669,7 @@ fn downvote_balance_is_not_enough() {
             LawModule::downvote(
                 Origin::signed(creator.clone()),
                 INITIAL_LAW_ID,
+                INITIAL_LAW_ID,
                 downvote_price
             ),
             Error::<Test>::BalanceIsNotEnough
@@ -675,6 +678,35 @@ fn downvote_balance_is_not_enough() {
         // Assert law was not downvoted
         let (_, new_price) = LawModule::get_law(INITIAL_LAW_ID).unwrap();
         assert_eq!(new_price, creation_price);
+    });
+}
+
+#[test]
+fn downvote_outdated_text() {
+    new_test_ext().execute_with(|| {
+        // Extract account creation for reuse
+        let creator = account_id_from_raw(CREATOR);
+
+        // Attempt to create the law
+        assert_ok!(LawModule::create(
+            Origin::signed(creator.clone()),
+            INITIAL_LAW_ID,
+            LAW_PRICE
+        ));
+
+        assert_noop!(
+            LawModule::downvote(
+                Origin::signed(creator.clone()),
+                INITIAL_LAW_ID,
+                SOME_LAW_TEXT,
+                LAW_PRICE
+            ),
+            Error::<Test>::OutdatedText
+        );
+
+        // Assert law was not downvoted
+        let (_, new_price) = LawModule::get_law(INITIAL_LAW_ID).unwrap();
+        assert_eq!(new_price, LAW_PRICE);
     });
 }
 
