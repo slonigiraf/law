@@ -929,3 +929,56 @@ fn create_and_edit_success() {
         );
     });
 }
+
+#[test]
+fn create_and_edit_used_id() {
+    new_test_ext().execute_with(|| {
+        let creator = account_id_from_raw(CREATOR);
+        assert_ok!(LawModule::create(
+            Origin::signed(creator),
+            A_LAW_ID,
+            A_LAW_ID,
+            A_LAW_PRICE
+        ));
+        assert_noop!(
+            LawModule::create_and_edit(
+                Origin::signed(creator),
+                A_LAW_ID,
+                A_LAW_ID,
+                A_LAW_PRICE,
+                ANOTHER_LAW_ID,
+                ANOTHER_LAW_TEXT,
+                EDITED_LAW_TEXT,
+                ANOTHER_LAW_PRICE,
+            ),
+            Error::<Test>::UsedId
+        );
+    });
+}
+
+#[test]
+fn create_and_edit_balance_is_not_enough() {
+    new_test_ext().execute_with(|| {
+        let creator = account_id_from_raw(CREATOR);
+        assert_ok!(LawModule::create(
+            Origin::signed(creator),
+            ANOTHER_LAW_ID,
+            ANOTHER_LAW_TEXT,
+            ANOTHER_LAW_PRICE
+        ));
+        assert_noop!(
+            LawModule::create_and_edit(
+                Origin::signed(creator),
+                A_LAW_ID,
+                A_LAW_ID,
+                A_LAW_PRICE,
+                ANOTHER_LAW_ID,
+                ANOTHER_LAW_TEXT,
+                EDITED_LAW_TEXT,
+                INITIAL_BALANCE,
+            ),
+            Error::<Test>::BalanceIsNotEnough
+        );
+        assert_eq!(LawModule::law_exists(A_LAW_ID), false);
+    });
+}
