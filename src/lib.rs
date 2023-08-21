@@ -183,9 +183,10 @@ pub mod pallet {
 
         #[pallet::weight(T::WeightInfo::remove())]
         #[transactional]
-        pub fn remove(origin: OriginFor<T>, id: [u8; 32]) -> DispatchResultWithPostInfo {
+        pub fn remove(origin: OriginFor<T>, id: [u8; 32], current_text: [u8; 32]) -> DispatchResultWithPostInfo {
             let sender = ensure_signed(origin)?;
-            let (_, price) = Laws::<T>::get(&id).ok_or(Error::<T>::MissingId)?;
+            let (text, price) = Laws::<T>::get(&id).ok_or(Error::<T>::MissingId)?;
+            ensure!(text == current_text, Error::<T>::OutdatedText);
             <T as Config>::Currency::withdraw(
                 &sender,
                 price,

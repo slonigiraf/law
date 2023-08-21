@@ -733,6 +733,7 @@ fn remove_success() {
         let pre_balance = <pallet_balances::Pallet<Test>>::total_balance(&editor);
         assert_ok!(LawModule::remove(
             Origin::signed(editor.clone()),
+            INITIAL_LAW_ID,
             INITIAL_LAW_ID
         ));
 
@@ -761,7 +762,7 @@ fn remove_missing_id() {
     new_test_ext().execute_with(|| {
         let creator = account_id_from_raw(CREATOR);
         assert_noop!(
-            LawModule::remove(Origin::signed(creator.clone()), INITIAL_LAW_ID),
+            LawModule::remove(Origin::signed(creator.clone()), INITIAL_LAW_ID, INITIAL_LAW_ID),
             Error::<Test>::MissingId
         );
     });
@@ -787,9 +788,39 @@ fn remove_balance_is_not_enough() {
         assert_noop!(
             LawModule::remove(
                 Origin::signed(creator.clone()),
+                INITIAL_LAW_ID,
                 INITIAL_LAW_ID
             ),
             Error::<Test>::BalanceIsNotEnough
+        );
+
+        // Assert law was not removed
+        assert_eq!(LawModule::law_exists(INITIAL_LAW_ID), true);
+    });
+}
+
+#[test]
+fn remove_outdated_text() {
+    new_test_ext().execute_with(|| {
+        // Extract account creation for reuse
+        let creator = account_id_from_raw(CREATOR);
+
+        // Attempt to create the law
+        assert_ok!(LawModule::create(
+            Origin::signed(creator.clone()),
+            INITIAL_LAW_ID,
+            LAW_PRICE
+        ));
+
+        // Attempt to remove the law
+        
+        assert_noop!(
+            LawModule::remove(
+                Origin::signed(creator.clone()),
+                INITIAL_LAW_ID,
+                SOME_LAW_TEXT
+            ),
+            Error::<Test>::OutdatedText
         );
 
         // Assert law was not removed
