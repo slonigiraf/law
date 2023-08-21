@@ -3,8 +3,8 @@ use super::*;
 use frame_benchmarking::{benchmarks, impl_benchmark_test_suite, whitelisted_caller};
 use frame_system::RawOrigin;
 
-pub const INITIAL_BALANCE: u64 = 1000;
-pub const LAW_PRICE: u64 = 10;
+pub const INITIAL_BALANCE: u32 = 1000;
+pub const LAW_PRICE: u32 = 10;
 
 pub const A_LAW_ID: [u8; 32] = [
     212, 53, 147, 199, 21, 253, 211, 28, 97, 20, 26, 189, 4, 169, 159, 214, 130, 44, 133, 88, 133,
