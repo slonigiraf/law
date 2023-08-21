@@ -126,6 +126,47 @@ pub mod pallet {
             Ok(().into())
         }
 
+        // Create and edit
+        #[pallet::weight(T::WeightInfo::create())]//TODO provide actual weight
+        #[transactional]
+        pub fn create_and_edit(
+            origin: OriginFor<T>,
+            create_id: [u8; 32],
+            create_text: [u8; 32],
+            create_price: BalanceOf<T>,
+            edit_id: [u8; 32],
+            edit_current_text: [u8; 32],
+            edit_new_text: [u8; 32],
+            edit_new_price: BalanceOf<T>,
+        ) -> DispatchResultWithPostInfo {
+            let sender = ensure_signed(origin)?;
+            // Check the data
+            ensure!(!Laws::<T>::contains_key(&create_id), Error::<T>::UsedId);
+            <T as Config>::Currency::withdraw(
+                &sender,
+                create_price,
+                WithdrawReasons::TRANSFER.into(),
+                ExistenceRequirement::KeepAlive,
+            )
+            .map_err(|_| Error::<T>::BalanceIsNotEnough)?;
+            let (old_text, old_price) = Laws::<T>::get(&edit_id).ok_or(Error::<T>::MissingId)?;
+            ensure!(edit_new_price >= old_price, Error::<T>::NewPriceIsLow);
+            ensure!(old_text == edit_current_text, Error::<T>::OutdatedText);
+            <T as Config>::Currency::withdraw(
+                &sender,
+                edit_new_price,
+                WithdrawReasons::TRANSFER.into(),
+                ExistenceRequirement::KeepAlive,
+            )
+            .map_err(|_| Error::<T>::BalanceIsNotEnough)?;
+            //Storage operations
+            Laws::<T>::insert(create_id, (create_text, create_price));
+            Self::deposit_event(Event::LawCreated(create_id, create_text, create_price));
+            Laws::<T>::insert(edit_id, (edit_new_text, edit_new_price));
+            Self::deposit_event(Event::LawEdited(edit_id, old_text, edit_new_text, edit_new_price));
+            Ok(().into())
+        }
+
         #[pallet::weight(T::WeightInfo::upvote())]
         #[transactional]
         pub fn upvote(
