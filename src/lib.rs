@@ -55,7 +55,7 @@ pub mod pallet {
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
 
     pub enum Event<T: Config> {
-        LawCreated([u8; 32], BalanceOf<T>),
+        LawCreated([u8; 32], [u8; 32], BalanceOf<T>),
         LawEdited([u8; 32], [u8; 32], [u8; 32], BalanceOf<T>),
         LawUpvoted([u8; 32], BalanceOf<T>),
         LawDownvoted([u8; 32], BalanceOf<T>),
@@ -84,6 +84,7 @@ pub mod pallet {
         pub fn create(
             origin: OriginFor<T>,
             id: [u8; 32],
+            text: [u8; 32],
             price: BalanceOf<T>,
         ) -> DispatchResultWithPostInfo {
             let sender = ensure_signed(origin)?;
@@ -95,8 +96,8 @@ pub mod pallet {
                 ExistenceRequirement::KeepAlive,
             )
             .map_err(|_| Error::<T>::BalanceIsNotEnough)?;
-            Laws::<T>::insert(id, (id, price));
-            Self::deposit_event(Event::LawCreated(id, price));
+            Laws::<T>::insert(id, (text, price));
+            Self::deposit_event(Event::LawCreated(id, text, price));
             Ok(().into())
         }
         // Edit a law functionality

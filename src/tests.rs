@@ -169,11 +169,15 @@ fn creation_success() {
         assert_ok!(LawModule::create(
             Origin::signed(creator.clone()),
             INITIAL_LAW_ID,
+            SOME_LAW_TEXT,
             LAW_PRICE
         ));
 
         // Assert law now exists and the balance was deducted
         assert_eq!(LawModule::law_exists(INITIAL_LAW_ID), true);
+        let (text, price) = LawModule::get_law(INITIAL_LAW_ID).unwrap();
+        assert_eq!(text, SOME_LAW_TEXT);
+        assert_eq!(price, LAW_PRICE);
         let post_balance = <pallet_balances::Pallet<Test>>::total_balance(&creator);
         assert_eq!(post_balance, initial_balance - LAW_PRICE);
 
@@ -184,6 +188,7 @@ fn creation_success() {
             events[1].event,
             TestEvent::LawModule(laws::Event::<Test>::LawCreated(
                 INITIAL_LAW_ID,
+                SOME_LAW_TEXT,
                 LAW_PRICE
             ))
         );
@@ -197,10 +202,11 @@ fn creation_used_id() {
         assert_ok!(LawModule::create(
             Origin::signed(creator),
             INITIAL_LAW_ID,
+            INITIAL_LAW_ID,
             LAW_PRICE
         ));
         assert_noop!(
-            LawModule::create(Origin::signed(creator), INITIAL_LAW_ID, LAW_PRICE),
+            LawModule::create(Origin::signed(creator), INITIAL_LAW_ID, INITIAL_LAW_ID, LAW_PRICE),
             Error::<Test>::UsedId
         );
     });
@@ -211,7 +217,7 @@ fn creation_balance_is_not_enough() {
     new_test_ext().execute_with(|| {
         let creator = account_id_from_raw(CREATOR);
         assert_noop!(
-            LawModule::create(Origin::signed(creator), INITIAL_LAW_ID, INITIAL_BALANCE + 1),
+            LawModule::create(Origin::signed(creator), INITIAL_LAW_ID, INITIAL_LAW_ID, INITIAL_BALANCE + 1),
             Error::<Test>::BalanceIsNotEnough
         );
         assert_eq!(LawModule::law_exists(INITIAL_LAW_ID), false);
@@ -228,6 +234,7 @@ fn edit_success() {
         // Attempt to create the law
         assert_ok!(LawModule::create(
             Origin::signed(creator.clone()),
+            INITIAL_LAW_ID,
             INITIAL_LAW_ID,
             LAW_PRICE
         ));
@@ -298,6 +305,7 @@ fn edit_new_price_is_low() {
         assert_ok!(LawModule::create(
             Origin::signed(creator.clone()),
             INITIAL_LAW_ID,
+            INITIAL_LAW_ID,
             LAW_PRICE
         ));
 
@@ -333,6 +341,7 @@ fn edit_balance_is_not_enough() {
         assert_ok!(LawModule::create(
             Origin::signed(creator.clone()),
             INITIAL_LAW_ID,
+            INITIAL_LAW_ID,
             LAW_PRICE
         ));
 
@@ -365,6 +374,7 @@ fn edit_outdated_text() {
         assert_ok!(LawModule::create(
             Origin::signed(creator.clone()),
             INITIAL_LAW_ID,
+            INITIAL_LAW_ID,
             LAW_PRICE
         ));
 
@@ -395,6 +405,7 @@ fn upvote_success() {
         // Attempt to create the law
         assert_ok!(LawModule::create(
             Origin::signed(creator.clone()),
+            INITIAL_LAW_ID,
             INITIAL_LAW_ID,
             LAW_PRICE
         ));
@@ -455,6 +466,7 @@ fn upvote_price_overflow() {
         assert_ok!(LawModule::create(
             Origin::signed(creator.clone()),
             INITIAL_LAW_ID,
+            INITIAL_LAW_ID,
             LAW_PRICE
         ));
 
@@ -486,6 +498,7 @@ fn upvote_balance_is_not_enough() {
         // Attempt to create the law
         assert_ok!(LawModule::create(
             Origin::signed(creator.clone()),
+            INITIAL_LAW_ID,
             INITIAL_LAW_ID,
             LAW_PRICE
         ));
@@ -519,6 +532,7 @@ fn upvote_outdated_text() {
         assert_ok!(LawModule::create(
             Origin::signed(creator.clone()),
             INITIAL_LAW_ID,
+            INITIAL_LAW_ID,
             LAW_PRICE
         ));
 
@@ -548,6 +562,7 @@ fn downvote_success() {
         // Attempt to create the law
         assert_ok!(LawModule::create(
             Origin::signed(creator.clone()),
+            INITIAL_LAW_ID,
             INITIAL_LAW_ID,
             LAW_PRICE
         ));
@@ -609,6 +624,7 @@ fn downvote_underflow() {
         assert_ok!(LawModule::create(
             Origin::signed(creator.clone()),
             INITIAL_LAW_ID,
+            INITIAL_LAW_ID,
             LAW_PRICE
         ));
 
@@ -659,6 +675,7 @@ fn downvote_balance_is_not_enough() {
         assert_ok!(LawModule::create(
             Origin::signed(creator.clone()),
             INITIAL_LAW_ID,
+            INITIAL_LAW_ID,
             creation_price
         ));
 
@@ -691,6 +708,7 @@ fn downvote_outdated_text() {
         assert_ok!(LawModule::create(
             Origin::signed(creator.clone()),
             INITIAL_LAW_ID,
+            INITIAL_LAW_ID,
             LAW_PRICE
         ));
 
@@ -720,6 +738,7 @@ fn remove_success() {
         // Attempt to create the law
         assert_ok!(LawModule::create(
             Origin::signed(creator.clone()),
+            INITIAL_LAW_ID,
             INITIAL_LAW_ID,
             LAW_PRICE
         ));
@@ -780,6 +799,7 @@ fn remove_balance_is_not_enough() {
         assert_ok!(LawModule::create(
             Origin::signed(creator.clone()),
             INITIAL_LAW_ID,
+            INITIAL_LAW_ID,
             creation_price
         ));
 
@@ -808,6 +828,7 @@ fn remove_outdated_text() {
         // Attempt to create the law
         assert_ok!(LawModule::create(
             Origin::signed(creator.clone()),
+            INITIAL_LAW_ID,
             INITIAL_LAW_ID,
             LAW_PRICE
         ));
