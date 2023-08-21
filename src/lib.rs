@@ -69,6 +69,7 @@ pub mod pallet {
         MissingId,
         NewPriceIsLow,
         PriceOverflow,
+        OutdatedText,
     }
 
     #[pallet::pallet]
@@ -104,12 +105,14 @@ pub mod pallet {
         pub fn edit(
             origin: OriginFor<T>,
             id: [u8; 32],
+            current_text: [u8; 32],
             new_text: [u8; 32],
             new_price: BalanceOf<T>,
         ) -> DispatchResultWithPostInfo {
             let sender = ensure_signed(origin)?;
             let (old_text, old_price) = Laws::<T>::get(&id).ok_or(Error::<T>::MissingId)?;
             ensure!(new_price >= old_price, Error::<T>::NewPriceIsLow);
+            ensure!(old_text == current_text, Error::<T>::OutdatedText);
             <T as Config>::Currency::withdraw(
                 &sender,
                 new_price,

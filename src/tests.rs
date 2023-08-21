@@ -26,6 +26,10 @@ pub const INITIAL_LAW_ID: [u8; 32] = [
     212, 53, 147, 199, 21, 253, 211, 28, 97, 20, 26, 189, 4, 169, 159, 214, 130, 44, 133, 88, 133,
     76, 205, 227, 154, 86, 132, 231, 165, 109, 162, 125,
 ];
+pub const SOME_LAW_TEXT: [u8; 32] = [
+    100, 50, 147, 199, 21, 253, 211, 28, 97, 20, 26, 189, 4, 169, 159, 214, 130, 44, 133, 88, 133,
+    76, 205, 227, 154, 86, 132, 231, 165, 109, 162, 200,
+];
 pub const INITIAL_LAW_TEXT: [u8; 32] = INITIAL_LAW_ID;
 pub const EDITED_LAW_TEXT: [u8; 32] = [
     142, 175, 4, 21, 22, 135, 115, 99, 38, 201, 254, 161, 126, 37, 252, 82, 135, 97, 54, 147, 201,
@@ -237,6 +241,7 @@ fn edit_success() {
         assert_ok!(LawModule::edit(
             Origin::signed(editor.clone()),
             INITIAL_LAW_ID,
+            INITIAL_LAW_ID,
             EDITED_LAW_TEXT,
             price_for_edit
         ));
@@ -273,6 +278,7 @@ fn edit_missing_id() {
             LawModule::edit(
                 Origin::signed(editor.clone()),
                 INITIAL_LAW_ID,
+                INITIAL_LAW_ID,
                 EDITED_LAW_TEXT,
                 LAW_PRICE
             ),
@@ -303,6 +309,7 @@ fn edit_new_price_is_low() {
         assert_noop!(
             LawModule::edit(
                 Origin::signed(editor.clone()),
+                INITIAL_LAW_ID,
                 INITIAL_LAW_ID,
                 EDITED_LAW_TEXT,
                 price_for_edit
@@ -335,10 +342,42 @@ fn edit_balance_is_not_enough() {
             LawModule::edit(
                 Origin::signed(editor.clone()),
                 INITIAL_LAW_ID,
+                INITIAL_LAW_ID,
                 EDITED_LAW_TEXT,
                 price_for_edit
             ),
             Error::<Test>::BalanceIsNotEnough
+        );
+        let (updated_text, new_price) = LawModule::get_law(INITIAL_LAW_ID).unwrap();
+        assert_eq!(updated_text, INITIAL_LAW_TEXT);
+        assert_eq!(new_price, LAW_PRICE);
+    });
+}
+
+#[test]
+fn edit_outdated_text() {
+    new_test_ext().execute_with(|| {
+        // Extract account creation for reuse
+        let creator = account_id_from_raw(CREATOR);
+        let editor = account_id_from_raw(EDITOR);
+
+        // Attempt to create the law
+        assert_ok!(LawModule::create(
+            Origin::signed(creator.clone()),
+            INITIAL_LAW_ID,
+            LAW_PRICE
+        ));
+
+        // Attempt to edit the law
+        assert_noop!(
+            LawModule::edit(
+                Origin::signed(editor.clone()),
+                INITIAL_LAW_ID,
+                SOME_LAW_TEXT,
+                EDITED_LAW_TEXT,
+                LAW_PRICE
+            ),
+            Error::<Test>::OutdatedText
         );
         let (updated_text, new_price) = LawModule::get_law(INITIAL_LAW_ID).unwrap();
         assert_eq!(updated_text, INITIAL_LAW_TEXT);
