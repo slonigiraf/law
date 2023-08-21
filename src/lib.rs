@@ -130,10 +130,12 @@ pub mod pallet {
         pub fn upvote(
             origin: OriginFor<T>,
             id: [u8; 32],
+            current_text: [u8; 32],
             price: BalanceOf<T>,
         ) -> DispatchResultWithPostInfo {
             let sender = ensure_signed(origin)?;
             let (text, old_price) = Laws::<T>::get(&id).ok_or(Error::<T>::MissingId)?;
+            ensure!(text == current_text, Error::<T>::OutdatedText);
             let new_price = old_price.checked_add(&price).ok_or(Error::<T>::PriceOverflow)?;
             <T as Config>::Currency::withdraw(
                 &sender,

@@ -408,6 +408,7 @@ fn upvote_success() {
         assert_ok!(LawModule::upvote(
             Origin::signed(editor.clone()),
             INITIAL_LAW_ID,
+            INITIAL_LAW_ID,
             upvote_price
         ));
 
@@ -438,7 +439,7 @@ fn upvote_missing_id() {
     new_test_ext().execute_with(|| {
         let creator = account_id_from_raw(CREATOR);
         assert_noop!(
-            LawModule::upvote(Origin::signed(creator.clone()), INITIAL_LAW_ID, LAW_PRICE),
+            LawModule::upvote(Origin::signed(creator.clone()), INITIAL_LAW_ID, INITIAL_LAW_ID, LAW_PRICE),
             Error::<Test>::MissingId
         );
     });
@@ -463,6 +464,7 @@ fn upvote_price_overflow() {
         assert_noop!(
             LawModule::upvote(
                 Origin::signed(creator.clone()),
+                INITIAL_LAW_ID,
                 INITIAL_LAW_ID,
                 upvote_price
             ),
@@ -495,9 +497,39 @@ fn upvote_balance_is_not_enough() {
             LawModule::upvote(
                 Origin::signed(creator.clone()),
                 INITIAL_LAW_ID,
+                INITIAL_LAW_ID,
                 upvote_price
             ),
             Error::<Test>::BalanceIsNotEnough
+        );
+
+        // Assert law was not upvoted
+        let (_, new_price) = LawModule::get_law(INITIAL_LAW_ID).unwrap();
+        assert_eq!(new_price, LAW_PRICE);
+    });
+}
+
+#[test]
+fn upvote_outdated_text() {
+    new_test_ext().execute_with(|| {
+        // Extract account creation for reuse
+        let creator = account_id_from_raw(CREATOR);
+
+        // Attempt to create the law
+        assert_ok!(LawModule::create(
+            Origin::signed(creator.clone()),
+            INITIAL_LAW_ID,
+            LAW_PRICE
+        ));
+
+        assert_noop!(
+            LawModule::upvote(
+                Origin::signed(creator.clone()),
+                INITIAL_LAW_ID,
+                SOME_LAW_TEXT,
+                LAW_PRICE
+            ),
+            Error::<Test>::OutdatedText
         );
 
         // Assert law was not upvoted
