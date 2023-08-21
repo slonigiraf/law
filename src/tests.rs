@@ -982,3 +982,62 @@ fn create_and_edit_balance_is_not_enough() {
         assert_eq!(LawModule::law_exists(A_LAW_ID), false);
     });
 }
+//----------
+#[test]
+fn create_and_edit_missing_id() {
+    new_test_ext().execute_with(|| {
+        let editor = account_id_from_raw(EDITOR);
+        assert_noop!(
+            LawModule::create_and_edit(
+                Origin::signed(editor),
+                A_LAW_ID,
+                A_LAW_ID,
+                A_LAW_PRICE,
+                ANOTHER_LAW_ID,
+                ANOTHER_LAW_TEXT,
+                EDITED_LAW_TEXT,
+                ANOTHER_LAW_PRICE,
+            ),
+            Error::<Test>::MissingId
+        );
+    });
+}
+
+#[test]
+fn create_and_edit_new_price_is_low() {
+    new_test_ext().execute_with(|| {
+        // Extract account creation for reuse
+        let creator = account_id_from_raw(CREATOR);
+        let editor = account_id_from_raw(EDITOR);
+
+        // Attempt to create the law
+        assert_ok!(LawModule::create(
+            Origin::signed(creator.clone()),
+            ANOTHER_LAW_ID,
+            ANOTHER_LAW_TEXT,
+            ANOTHER_LAW_PRICE
+        ));
+
+        // Clear events
+        frame_system::Pallet::<Test>::reset_events();
+
+        // Attempt to create the law
+        let price_for_edit = ANOTHER_LAW_PRICE - 1;
+        assert_noop!(
+            LawModule::create_and_edit(
+                Origin::signed(editor),
+                A_LAW_ID,
+                A_LAW_TEXT,
+                A_LAW_PRICE,
+                ANOTHER_LAW_ID,
+                ANOTHER_LAW_TEXT,
+                EDITED_LAW_TEXT,
+                price_for_edit
+            ),
+            Error::<Test>::NewPriceIsLow
+        );
+        let (updated_text, new_price) = LawModule::get_law(ANOTHER_LAW_ID).unwrap();
+        assert_eq!(updated_text, ANOTHER_LAW_TEXT);
+        assert_eq!(new_price, ANOTHER_LAW_PRICE);
+    });
+}
