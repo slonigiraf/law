@@ -34,6 +34,7 @@ use sp_std::marker::PhantomData;
 pub trait WeightInfo {
 	fn create() -> Weight;
 	fn edit() -> Weight;
+        fn create_and_edit() -> Weight;
 	fn upvote() -> Weight;
 	fn downvote() -> Weight;
 	fn remove() -> Weight;
@@ -42,33 +43,39 @@ pub trait WeightInfo {
 /// Weights for pallet_letters using the Substrate node and recommended hardware.
 pub struct SubstrateWeight<T>(PhantomData<T>);
 impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
-	// Storage: Laws Laws (r:1 w:1)
+        // Storage: Laws Laws (r:1 w:1)
         fn create() -> Weight {
-                (47_000_000 as Weight)
+                (49_000_000 as Weight)
                         .saturating_add(T::DbWeight::get().reads(1 as Weight))
                         .saturating_add(T::DbWeight::get().writes(1 as Weight))
         }
         // Storage: Laws Laws (r:1 w:1)
         fn edit() -> Weight {
-                (49_000_000 as Weight)
+                (48_000_000 as Weight)
                         .saturating_add(T::DbWeight::get().reads(1 as Weight))
                         .saturating_add(T::DbWeight::get().writes(1 as Weight))
+        }
+        // Storage: Laws Laws (r:2 w:2)
+        fn create_and_edit() -> Weight {
+                (72_000_000 as Weight)
+                        .saturating_add(T::DbWeight::get().reads(2 as Weight))
+                        .saturating_add(T::DbWeight::get().writes(2 as Weight))
         }
         // Storage: Laws Laws (r:1 w:1)
         fn upvote() -> Weight {
-                (49_000_000 as Weight)
-                        .saturating_add(T::DbWeight::get().reads(1 as Weight))
-                        .saturating_add(T::DbWeight::get().writes(1 as Weight))
-        }
-        // Storage: Laws Laws (r:1 w:1)
-        fn downvote() -> Weight {
                 (48_000_000 as Weight)
                         .saturating_add(T::DbWeight::get().reads(1 as Weight))
                         .saturating_add(T::DbWeight::get().writes(1 as Weight))
         }
         // Storage: Laws Laws (r:1 w:1)
-        fn remove() -> Weight {
+        fn downvote() -> Weight {
                 (47_000_000 as Weight)
+                        .saturating_add(T::DbWeight::get().reads(1 as Weight))
+                        .saturating_add(T::DbWeight::get().writes(1 as Weight))
+        }
+        // Storage: Laws Laws (r:1 w:1)
+        fn remove() -> Weight {
+                (46_000_000 as Weight)
                         .saturating_add(T::DbWeight::get().reads(1 as Weight))
                         .saturating_add(T::DbWeight::get().writes(1 as Weight))
         }
@@ -76,33 +83,39 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 
 // For backwards compatibility and tests
 impl WeightInfo for () {
-	// Storage: Laws Laws (r:1 w:1)
+        // Storage: Laws Laws (r:1 w:1)
         fn create() -> Weight {
-                (47_000_000 as Weight)
+                (49_000_000 as Weight)
                         .saturating_add(RocksDbWeight::get().reads(1 as Weight))
                         .saturating_add(RocksDbWeight::get().writes(1 as Weight))
         }
         // Storage: Laws Laws (r:1 w:1)
         fn edit() -> Weight {
-                (49_000_000 as Weight)
+                (48_000_000 as Weight)
                         .saturating_add(RocksDbWeight::get().reads(1 as Weight))
                         .saturating_add(RocksDbWeight::get().writes(1 as Weight))
+        }
+        // Storage: Laws Laws (r:2 w:2)
+        fn create_and_edit() -> Weight {
+                (72_000_000 as Weight)
+                        .saturating_add(RocksDbWeight::get().reads(2 as Weight))
+                        .saturating_add(RocksDbWeight::get().writes(2 as Weight))
         }
         // Storage: Laws Laws (r:1 w:1)
         fn upvote() -> Weight {
-                (49_000_000 as Weight)
-                        .saturating_add(RocksDbWeight::get().reads(1 as Weight))
-                        .saturating_add(RocksDbWeight::get().writes(1 as Weight))
-        }
-        // Storage: Laws Laws (r:1 w:1)
-        fn downvote() -> Weight {
                 (48_000_000 as Weight)
                         .saturating_add(RocksDbWeight::get().reads(1 as Weight))
                         .saturating_add(RocksDbWeight::get().writes(1 as Weight))
         }
         // Storage: Laws Laws (r:1 w:1)
-        fn remove() -> Weight {
+        fn downvote() -> Weight {
                 (47_000_000 as Weight)
+                        .saturating_add(RocksDbWeight::get().reads(1 as Weight))
+                        .saturating_add(RocksDbWeight::get().writes(1 as Weight))
+        }
+        // Storage: Laws Laws (r:1 w:1)
+        fn remove() -> Weight {
+                (46_000_000 as Weight)
                         .saturating_add(RocksDbWeight::get().reads(1 as Weight))
                         .saturating_add(RocksDbWeight::get().writes(1 as Weight))
         }

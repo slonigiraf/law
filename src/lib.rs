@@ -127,7 +127,7 @@ pub mod pallet {
         }
 
         // Create and edit
-        #[pallet::weight(T::WeightInfo::create())]//TODO provide actual weight
+        #[pallet::weight(T::WeightInfo::create_and_edit())]
         #[transactional]
         pub fn create_and_edit(
             origin: OriginFor<T>,
