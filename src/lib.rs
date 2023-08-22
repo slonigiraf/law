@@ -142,19 +142,13 @@ pub mod pallet {
             let sender = ensure_signed(origin)?;
             // Check the data
             ensure!(!Laws::<T>::contains_key(&create_id), Error::<T>::UsedId);
-            <T as Config>::Currency::withdraw(
-                &sender,
-                create_price,
-                WithdrawReasons::TRANSFER.into(),
-                ExistenceRequirement::KeepAlive,
-            )
-            .map_err(|_| Error::<T>::BalanceIsNotEnough)?;
             let (old_text, old_price) = Laws::<T>::get(&edit_id).ok_or(Error::<T>::MissingId)?;
             ensure!(edit_new_price >= old_price, Error::<T>::NewPriceIsLow);
             ensure!(old_text == edit_current_text, Error::<T>::OutdatedText);
+            let price = create_price.checked_add(&edit_new_price).ok_or(Error::<T>::PriceOverflow)?;
             <T as Config>::Currency::withdraw(
                 &sender,
-                edit_new_price,
+                price,
                 WithdrawReasons::TRANSFER.into(),
                 ExistenceRequirement::KeepAlive,
             )

@@ -909,9 +909,9 @@ fn create_and_edit_success() {
 
         // Check for emitted event
         let events = frame_system::Pallet::<Test>::events();
-        assert_eq!(events.len(), 4);
+        assert_eq!(events.len(), 3);
         assert_eq!(
-            events[2].event,
+            events[1].event,
             TestEvent::LawModule(laws::Event::<Test>::LawCreated(
                 A_LAW_ID,
                 A_LAW_TEXT,
@@ -919,7 +919,7 @@ fn create_and_edit_success() {
             ))
         );
         assert_eq!(
-            events[3].event,
+            events[2].event,
             TestEvent::LawModule(laws::Event::<Test>::LawEdited(
                 ANOTHER_LAW_ID,
                 ANOTHER_LAW_TEXT,
