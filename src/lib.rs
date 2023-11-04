@@ -7,9 +7,8 @@ use frame_support::{
 };
 use frame_system::pallet_prelude::*;
 pub use pallet::*;
-use sp_core::sr25519::{Public, Signature};
-use sp_runtime::traits::{IdentifyAccount, Verify, CheckedAdd};
-use sp_std::prelude::*;
+use sp_core::sr25519::Signature;
+use sp_runtime::traits::{CheckedAdd, IdentifyAccount, Verify};
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
@@ -27,7 +26,7 @@ pub mod pallet {
     /// Configure the pallet by specifying the parameters and types it depends on.
     #[pallet::config]
     pub trait Config: frame_system::Config {
-        type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+        type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
         type Currency: Currency<Self::AccountId>;
         type WeightInfo: WeightInfo;
     }
@@ -41,14 +40,14 @@ pub mod pallet {
         StorageMap<_, Blake2_128Concat, [u8; 32], ([u8; 32], BalanceOf<T>), OptionQuery>;
 
     #[pallet::genesis_config]
-    #[derive(Default)]
-    pub struct GenesisConfig;
+    #[derive(frame_support::DefaultNoBound)]
+    pub struct GenesisConfig<T: Config> {
+        _phantom: PhantomData<T>,
+    }
 
     #[pallet::genesis_build]
-    impl<T: Config> GenesisBuild<T> for GenesisConfig {
-        fn build(&self) {
-            // May be in future we need to do some configuration here
-        }
+    impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
+        fn build(&self) {}
     }
 
     #[pallet::event]
@@ -73,12 +72,12 @@ pub mod pallet {
     }
 
     #[pallet::pallet]
-    #[pallet::generate_store(pub(super) trait Store)]
     pub struct Pallet<T>(_);
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
         // Create a law functionality
+        #[pallet::call_index(0)]
         #[pallet::weight(T::WeightInfo::create())]
         #[transactional]
         pub fn create(
@@ -101,6 +100,7 @@ pub mod pallet {
             Ok(().into())
         }
         // Edit a law functionality
+        #[pallet::call_index(1)]
         #[pallet::weight(T::WeightInfo::edit())]
         #[transactional]
         pub fn edit(
@@ -127,6 +127,7 @@ pub mod pallet {
         }
 
         // Create and edit
+        #[pallet::call_index(2)]
         #[pallet::weight(T::WeightInfo::create_and_edit())]
         #[transactional]
         pub fn create_and_edit(
@@ -145,7 +146,9 @@ pub mod pallet {
             let (old_text, old_price) = Laws::<T>::get(&edit_id).ok_or(Error::<T>::MissingId)?;
             ensure!(edit_new_price >= old_price, Error::<T>::NewPriceIsLow);
             ensure!(old_text == edit_current_text, Error::<T>::OutdatedText);
-            let price = create_price.checked_add(&edit_new_price).ok_or(Error::<T>::PriceOverflow)?;
+            let price = create_price
+                .checked_add(&edit_new_price)
+                .ok_or(Error::<T>::PriceOverflow)?;
             <T as Config>::Currency::withdraw(
                 &sender,
                 price,
@@ -157,10 +160,16 @@ pub mod pallet {
             Laws::<T>::insert(create_id, (create_text, create_price));
             Self::deposit_event(Event::LawCreated(create_id, create_text, create_price));
             Laws::<T>::insert(edit_id, (edit_new_text, edit_new_price));
-            Self::deposit_event(Event::LawEdited(edit_id, old_text, edit_new_text, edit_new_price));
+            Self::deposit_event(Event::LawEdited(
+                edit_id,
+                old_text,
+                edit_new_text,
+                edit_new_price,
+            ));
             Ok(().into())
         }
 
+        #[pallet::call_index(3)]
         #[pallet::weight(T::WeightInfo::upvote())]
         #[transactional]
         pub fn upvote(
@@ -172,7 +181,9 @@ pub mod pallet {
             let sender = ensure_signed(origin)?;
             let (text, old_price) = Laws::<T>::get(&id).ok_or(Error::<T>::MissingId)?;
             ensure!(text == current_text, Error::<T>::OutdatedText);
-            let new_price = old_price.checked_add(&price).ok_or(Error::<T>::PriceOverflow)?;
+            let new_price = old_price
+                .checked_add(&price)
+                .ok_or(Error::<T>::PriceOverflow)?;
             <T as Config>::Currency::withdraw(
                 &sender,
                 price,
@@ -185,6 +196,7 @@ pub mod pallet {
             Ok(().into())
         }
 
+        #[pallet::call_index(4)]
         #[pallet::weight(T::WeightInfo::downvote())]
         #[transactional]
         pub fn downvote(
@@ -196,7 +208,7 @@ pub mod pallet {
             let sender = ensure_signed(origin)?;
             let (text, old_price) = Laws::<T>::get(&id).ok_or(Error::<T>::MissingId)?;
             ensure!(text == current_text, Error::<T>::OutdatedText);
-            let mut new_price = old_price;
+            let new_price;
             let mut payment = price;
             if price < old_price {
                 new_price = old_price - price;
@@ -217,9 +229,14 @@ pub mod pallet {
             Ok(().into())
         }
 
+        #[pallet::call_index(5)]
         #[pallet::weight(T::WeightInfo::remove())]
         #[transactional]
-        pub fn remove(origin: OriginFor<T>, id: [u8; 32], current_text: [u8; 32]) -> DispatchResultWithPostInfo {
+        pub fn remove(
+            origin: OriginFor<T>,
+            id: [u8; 32],
+            current_text: [u8; 32],
+        ) -> DispatchResultWithPostInfo {
             let sender = ensure_signed(origin)?;
             let (text, price) = Laws::<T>::get(&id).ok_or(Error::<T>::MissingId)?;
             ensure!(text == current_text, Error::<T>::OutdatedText);

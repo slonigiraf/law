@@ -4,11 +4,10 @@ use crate as laws;
 use frame_support::{assert_noop, assert_ok, parameter_types};
 use sp_core::H256;
 use sp_runtime::{
-    testing::Header,
     traits::{BlakeTwo256, IdentityLookup},
+    BuildStorage,
 };
-
-type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
+use sp_core::sr25519::Public;
 type Block = frame_system::mocking::MockBlock<Test>;
 pub type AccountId = <<Signature as Verify>::Signer as IdentifyAccount>::AccountId;
 
@@ -48,15 +47,11 @@ pub const EDITED_LAW_TEXT: [u8; 32] = [
 
 // Configure a mock runtime to test the pallet.
 frame_support::construct_runtime!(
-    pub enum Test where
-        Block = Block,
-        NodeBlock = Block,
-        UncheckedExtrinsic = UncheckedExtrinsic,
-    {
-        System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-        Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
-        LawModule: laws::{Pallet, Call, Storage, Event<T>, Config},
-    }
+pub enum Test {
+    System: frame_system::{Pallet, Call, Config<T>, Storage, Event<T>},
+    Balances: pallet_balances::{Pallet, Call, Config<T>, Storage, Event<T>},
+    LawModule: laws::{Pallet, Call, Storage, Event<T>, Config<Test>},
+}
 );
 
 // Helper Functions
@@ -65,7 +60,7 @@ fn account_id_from_raw(bytes: [u8; 32]) -> AccountId {
     AccountId::from(Public::from_raw(bytes)).into_account()
 }
 
-pub type TestEvent = Event;
+pub type TestEvent = RuntimeEvent;
 
 parameter_types! {
     pub const BlockHashCount: u64 = 250;
@@ -77,16 +72,15 @@ impl frame_system::Config for Test {
     type BlockWeights = ();
     type BlockLength = ();
     type DbWeight = ();
-    type Origin = Origin;
-    type Call = Call;
-    type Index = u64;
-    type BlockNumber = u64;
+    type RuntimeOrigin = RuntimeOrigin;
+    type RuntimeCall = RuntimeCall;
+    type Nonce = u64;
     type Hash = H256;
     type Hashing = BlakeTwo256;
     type AccountId = AccountId;
     type Lookup = IdentityLookup<Self::AccountId>;
-    type Header = Header;
-    type Event = Event;
+    type Block = Block;
+    type RuntimeEvent = RuntimeEvent;
     type BlockHashCount = BlockHashCount;
     type Version = ();
     type PalletInfo = PalletInfo;
@@ -105,19 +99,23 @@ parameter_types! {
 impl pallet_balances::Config for Test {
     type MaxLocks = ();
     type Balance = u64;
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type DustRemoval = ();
     type ExistentialDeposit = ExistentialDeposit;
     type AccountStore = System;
     type WeightInfo = ();
     type MaxReserves = ();
     type ReserveIdentifier = ();
+    type FreezeIdentifier = ();
+    type MaxFreezes = ();
+    type RuntimeHoldReason = ();
+    type MaxHolds = ();
 }
 
 parameter_types! {}
 
 impl Config for Test {
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type Currency = Balances;
     type WeightInfo = ();
 }
@@ -135,9 +133,7 @@ impl<T: Config> Pallet<T> {
 
 // Build genesis storage according to the mock runtime.
 pub fn new_test_ext() -> sp_io::TestExternalities {
-    let mut t = frame_system::GenesisConfig::default()
-        .build_storage::<Test>()
-        .unwrap();
+    let mut t = frame_system::GenesisConfig::<Test>::default().build_storage().unwrap();
 
     pallet_balances::GenesisConfig::<Test> {
         balances: vec![
@@ -146,12 +142,6 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
         ],
     }
     .assimilate_storage(&mut t)
-    .unwrap();
-
-    <crate::GenesisConfig as GenesisBuild<Test>>::assimilate_storage(
-        &crate::GenesisConfig::default(),
-        &mut t,
-    )
     .unwrap();
 
     let mut t: sp_io::TestExternalities = t.into();
@@ -177,7 +167,7 @@ fn creation_success() {
 
         // Attempt to create the law
         assert_ok!(LawModule::create(
-            Origin::signed(creator.clone()),
+            RuntimeOrigin::signed(creator.clone()),
             A_LAW_ID,
             A_LAW_TEXT,
             A_LAW_PRICE
@@ -210,13 +200,18 @@ fn creation_used_id() {
     new_test_ext().execute_with(|| {
         let creator = account_id_from_raw(CREATOR);
         assert_ok!(LawModule::create(
-            Origin::signed(creator),
+            RuntimeOrigin::signed(creator),
             A_LAW_ID,
             A_LAW_ID,
             A_LAW_PRICE
         ));
         assert_noop!(
-            LawModule::create(Origin::signed(creator), A_LAW_ID, A_LAW_ID, A_LAW_PRICE),
+            LawModule::create(
+                RuntimeOrigin::signed(creator),
+                A_LAW_ID,
+                A_LAW_ID,
+                A_LAW_PRICE
+            ),
             Error::<Test>::UsedId
         );
     });
@@ -227,7 +222,12 @@ fn creation_balance_is_not_enough() {
     new_test_ext().execute_with(|| {
         let creator = account_id_from_raw(CREATOR);
         assert_noop!(
-            LawModule::create(Origin::signed(creator), A_LAW_ID, A_LAW_ID, INITIAL_BALANCE + 1),
+            LawModule::create(
+                RuntimeOrigin::signed(creator),
+                A_LAW_ID,
+                A_LAW_ID,
+                INITIAL_BALANCE + 1
+            ),
             Error::<Test>::BalanceIsNotEnough
         );
         assert_eq!(LawModule::law_exists(A_LAW_ID), false);
@@ -243,7 +243,7 @@ fn edit_success() {
 
         // Attempt to create the law
         assert_ok!(LawModule::create(
-            Origin::signed(creator.clone()),
+            RuntimeOrigin::signed(creator.clone()),
             A_LAW_ID,
             A_LAW_ID,
             A_LAW_PRICE
@@ -256,7 +256,7 @@ fn edit_success() {
         let price_for_edit = A_LAW_PRICE;
         let pre_balance = <pallet_balances::Pallet<Test>>::total_balance(&editor);
         assert_ok!(LawModule::edit(
-            Origin::signed(editor.clone()),
+            RuntimeOrigin::signed(editor.clone()),
             A_LAW_ID,
             A_LAW_ID,
             EDITED_LAW_TEXT,
@@ -293,7 +293,7 @@ fn edit_missing_id() {
         let editor = account_id_from_raw(EDITOR);
         assert_noop!(
             LawModule::edit(
-                Origin::signed(editor.clone()),
+                RuntimeOrigin::signed(editor.clone()),
                 A_LAW_ID,
                 A_LAW_ID,
                 EDITED_LAW_TEXT,
@@ -313,7 +313,7 @@ fn edit_new_price_is_low() {
 
         // Attempt to create the law
         assert_ok!(LawModule::create(
-            Origin::signed(creator.clone()),
+            RuntimeOrigin::signed(creator.clone()),
             A_LAW_ID,
             A_LAW_ID,
             A_LAW_PRICE
@@ -326,7 +326,7 @@ fn edit_new_price_is_low() {
         let price_for_edit = A_LAW_PRICE - 1;
         assert_noop!(
             LawModule::edit(
-                Origin::signed(editor.clone()),
+                RuntimeOrigin::signed(editor.clone()),
                 A_LAW_ID,
                 A_LAW_ID,
                 EDITED_LAW_TEXT,
@@ -349,7 +349,7 @@ fn edit_balance_is_not_enough() {
 
         // Attempt to create the law
         assert_ok!(LawModule::create(
-            Origin::signed(creator.clone()),
+            RuntimeOrigin::signed(creator.clone()),
             A_LAW_ID,
             A_LAW_ID,
             A_LAW_PRICE
@@ -359,7 +359,7 @@ fn edit_balance_is_not_enough() {
         let price_for_edit = INITIAL_BALANCE + 1;
         assert_noop!(
             LawModule::edit(
-                Origin::signed(editor.clone()),
+                RuntimeOrigin::signed(editor.clone()),
                 A_LAW_ID,
                 A_LAW_ID,
                 EDITED_LAW_TEXT,
@@ -382,7 +382,7 @@ fn edit_outdated_text() {
 
         // Attempt to create the law
         assert_ok!(LawModule::create(
-            Origin::signed(creator.clone()),
+            RuntimeOrigin::signed(creator.clone()),
             A_LAW_ID,
             A_LAW_ID,
             A_LAW_PRICE
@@ -391,7 +391,7 @@ fn edit_outdated_text() {
         // Attempt to edit the law
         assert_noop!(
             LawModule::edit(
-                Origin::signed(editor.clone()),
+                RuntimeOrigin::signed(editor.clone()),
                 A_LAW_ID,
                 A_LAW_TEXT,
                 EDITED_LAW_TEXT,
@@ -414,7 +414,7 @@ fn upvote_success() {
 
         // Attempt to create the law
         assert_ok!(LawModule::create(
-            Origin::signed(creator.clone()),
+            RuntimeOrigin::signed(creator.clone()),
             A_LAW_ID,
             A_LAW_ID,
             A_LAW_PRICE
@@ -427,7 +427,7 @@ fn upvote_success() {
         let upvote_price = A_LAW_PRICE;
         let pre_balance = <pallet_balances::Pallet<Test>>::total_balance(&editor);
         assert_ok!(LawModule::upvote(
-            Origin::signed(editor.clone()),
+            RuntimeOrigin::signed(editor.clone()),
             A_LAW_ID,
             A_LAW_ID,
             upvote_price
@@ -447,10 +447,7 @@ fn upvote_success() {
         assert_eq!(events.len(), 2);
         assert_eq!(
             events[1].event,
-            TestEvent::LawModule(laws::Event::<Test>::LawUpvoted(
-                A_LAW_ID,
-                upvote_price
-            ))
+            TestEvent::LawModule(laws::Event::<Test>::LawUpvoted(A_LAW_ID, upvote_price))
         );
     });
 }
@@ -460,7 +457,12 @@ fn upvote_missing_id() {
     new_test_ext().execute_with(|| {
         let creator = account_id_from_raw(CREATOR);
         assert_noop!(
-            LawModule::upvote(Origin::signed(creator.clone()), A_LAW_ID, A_LAW_ID, A_LAW_PRICE),
+            LawModule::upvote(
+                RuntimeOrigin::signed(creator.clone()),
+                A_LAW_ID,
+                A_LAW_ID,
+                A_LAW_PRICE
+            ),
             Error::<Test>::MissingId
         );
     });
@@ -474,7 +476,7 @@ fn upvote_price_overflow() {
 
         // Attempt to create the law
         assert_ok!(LawModule::create(
-            Origin::signed(creator.clone()),
+            RuntimeOrigin::signed(creator.clone()),
             A_LAW_ID,
             A_LAW_ID,
             A_LAW_PRICE
@@ -485,7 +487,7 @@ fn upvote_price_overflow() {
 
         assert_noop!(
             LawModule::upvote(
-                Origin::signed(creator.clone()),
+                RuntimeOrigin::signed(creator.clone()),
                 A_LAW_ID,
                 A_LAW_ID,
                 upvote_price
@@ -507,7 +509,7 @@ fn upvote_balance_is_not_enough() {
 
         // Attempt to create the law
         assert_ok!(LawModule::create(
-            Origin::signed(creator.clone()),
+            RuntimeOrigin::signed(creator.clone()),
             A_LAW_ID,
             A_LAW_ID,
             A_LAW_PRICE
@@ -518,7 +520,7 @@ fn upvote_balance_is_not_enough() {
 
         assert_noop!(
             LawModule::upvote(
-                Origin::signed(creator.clone()),
+                RuntimeOrigin::signed(creator.clone()),
                 A_LAW_ID,
                 A_LAW_ID,
                 upvote_price
@@ -540,7 +542,7 @@ fn upvote_outdated_text() {
 
         // Attempt to create the law
         assert_ok!(LawModule::create(
-            Origin::signed(creator.clone()),
+            RuntimeOrigin::signed(creator.clone()),
             A_LAW_ID,
             A_LAW_ID,
             A_LAW_PRICE
@@ -548,7 +550,7 @@ fn upvote_outdated_text() {
 
         assert_noop!(
             LawModule::upvote(
-                Origin::signed(creator.clone()),
+                RuntimeOrigin::signed(creator.clone()),
                 A_LAW_ID,
                 A_LAW_TEXT,
                 A_LAW_PRICE
@@ -571,7 +573,7 @@ fn downvote_success() {
 
         // Attempt to create the law
         assert_ok!(LawModule::create(
-            Origin::signed(creator.clone()),
+            RuntimeOrigin::signed(creator.clone()),
             A_LAW_ID,
             A_LAW_ID,
             A_LAW_PRICE
@@ -584,7 +586,7 @@ fn downvote_success() {
         let downvote_price = 1;
         let pre_balance = <pallet_balances::Pallet<Test>>::total_balance(&editor);
         assert_ok!(LawModule::downvote(
-            Origin::signed(editor.clone()),
+            RuntimeOrigin::signed(editor.clone()),
             A_LAW_ID,
             A_LAW_ID,
             downvote_price
@@ -604,10 +606,7 @@ fn downvote_success() {
         assert_eq!(events.len(), 2);
         assert_eq!(
             events[1].event,
-            TestEvent::LawModule(laws::Event::<Test>::LawDownvoted(
-                A_LAW_ID,
-                downvote_price
-            ))
+            TestEvent::LawModule(laws::Event::<Test>::LawDownvoted(A_LAW_ID, downvote_price))
         );
     });
 }
@@ -617,7 +616,12 @@ fn downvote_missing_id() {
     new_test_ext().execute_with(|| {
         let creator = account_id_from_raw(CREATOR);
         assert_noop!(
-            LawModule::downvote(Origin::signed(creator.clone()), A_LAW_ID, A_LAW_ID, A_LAW_PRICE),
+            LawModule::downvote(
+                RuntimeOrigin::signed(creator.clone()),
+                A_LAW_ID,
+                A_LAW_ID,
+                A_LAW_PRICE
+            ),
             Error::<Test>::MissingId
         );
     });
@@ -632,7 +636,7 @@ fn downvote_underflow() {
 
         // Attempt to create the law
         assert_ok!(LawModule::create(
-            Origin::signed(creator.clone()),
+            RuntimeOrigin::signed(creator.clone()),
             A_LAW_ID,
             A_LAW_ID,
             A_LAW_PRICE
@@ -645,7 +649,7 @@ fn downvote_underflow() {
         let downvote_price = INITIAL_BALANCE;
         let pre_balance = <pallet_balances::Pallet<Test>>::total_balance(&editor);
         assert_ok!(LawModule::downvote(
-            Origin::signed(editor.clone()),
+            RuntimeOrigin::signed(editor.clone()),
             A_LAW_ID,
             A_LAW_ID,
             downvote_price
@@ -665,10 +669,7 @@ fn downvote_underflow() {
         assert_eq!(events.len(), 2);
         assert_eq!(
             events[1].event,
-            TestEvent::LawModule(laws::Event::<Test>::LawDownvoted(
-                A_LAW_ID,
-                A_LAW_PRICE
-            ))
+            TestEvent::LawModule(laws::Event::<Test>::LawDownvoted(A_LAW_ID, A_LAW_PRICE))
         );
     });
 }
@@ -679,11 +680,11 @@ fn downvote_balance_is_not_enough() {
         // Extract account creation for reuse
         let creator = account_id_from_raw(CREATOR);
 
-		let creation_price = INITIAL_BALANCE - 1;
+        let creation_price = INITIAL_BALANCE - 1;
 
         // Attempt to create the law
         assert_ok!(LawModule::create(
-            Origin::signed(creator.clone()),
+            RuntimeOrigin::signed(creator.clone()),
             A_LAW_ID,
             A_LAW_ID,
             creation_price
@@ -694,7 +695,7 @@ fn downvote_balance_is_not_enough() {
 
         assert_noop!(
             LawModule::downvote(
-                Origin::signed(creator.clone()),
+                RuntimeOrigin::signed(creator.clone()),
                 A_LAW_ID,
                 A_LAW_ID,
                 downvote_price
@@ -716,7 +717,7 @@ fn downvote_outdated_text() {
 
         // Attempt to create the law
         assert_ok!(LawModule::create(
-            Origin::signed(creator.clone()),
+            RuntimeOrigin::signed(creator.clone()),
             A_LAW_ID,
             A_LAW_ID,
             A_LAW_PRICE
@@ -724,7 +725,7 @@ fn downvote_outdated_text() {
 
         assert_noop!(
             LawModule::downvote(
-                Origin::signed(creator.clone()),
+                RuntimeOrigin::signed(creator.clone()),
                 A_LAW_ID,
                 A_LAW_TEXT,
                 A_LAW_PRICE
@@ -747,13 +748,13 @@ fn remove_success() {
 
         // Attempt to create the law
         assert_ok!(LawModule::create(
-            Origin::signed(creator.clone()),
+            RuntimeOrigin::signed(creator.clone()),
             A_LAW_ID,
             A_LAW_ID,
             A_LAW_PRICE
         ));
 
-		assert_eq!(LawModule::law_exists(A_LAW_ID), true);
+        assert_eq!(LawModule::law_exists(A_LAW_ID), true);
 
         // Clear events
         frame_system::Pallet::<Test>::reset_events();
@@ -761,7 +762,7 @@ fn remove_success() {
         // Attempt to remove the law
         let pre_balance = <pallet_balances::Pallet<Test>>::total_balance(&editor);
         assert_ok!(LawModule::remove(
-            Origin::signed(editor.clone()),
+            RuntimeOrigin::signed(editor.clone()),
             A_LAW_ID,
             A_LAW_ID
         ));
@@ -778,10 +779,7 @@ fn remove_success() {
         assert_eq!(events.len(), 2);
         assert_eq!(
             events[1].event,
-            TestEvent::LawModule(laws::Event::<Test>::LawRemoved(
-                A_LAW_ID,
-                A_LAW_PRICE
-            ))
+            TestEvent::LawModule(laws::Event::<Test>::LawRemoved(A_LAW_ID, A_LAW_PRICE))
         );
     });
 }
@@ -791,7 +789,7 @@ fn remove_missing_id() {
     new_test_ext().execute_with(|| {
         let creator = account_id_from_raw(CREATOR);
         assert_noop!(
-            LawModule::remove(Origin::signed(creator.clone()), A_LAW_ID, A_LAW_ID),
+            LawModule::remove(RuntimeOrigin::signed(creator.clone()), A_LAW_ID, A_LAW_ID),
             Error::<Test>::MissingId
         );
     });
@@ -803,24 +801,20 @@ fn remove_balance_is_not_enough() {
         // Extract account creation for reuse
         let creator = account_id_from_raw(CREATOR);
 
-		let creation_price = INITIAL_BALANCE - 1;
+        let creation_price = INITIAL_BALANCE - 1;
 
         // Attempt to create the law
         assert_ok!(LawModule::create(
-            Origin::signed(creator.clone()),
+            RuntimeOrigin::signed(creator.clone()),
             A_LAW_ID,
             A_LAW_ID,
             creation_price
         ));
 
         // Attempt to remove the law
-        
+
         assert_noop!(
-            LawModule::remove(
-                Origin::signed(creator.clone()),
-                A_LAW_ID,
-                A_LAW_ID
-            ),
+            LawModule::remove(RuntimeOrigin::signed(creator.clone()), A_LAW_ID, A_LAW_ID),
             Error::<Test>::BalanceIsNotEnough
         );
 
@@ -837,20 +831,16 @@ fn remove_outdated_text() {
 
         // Attempt to create the law
         assert_ok!(LawModule::create(
-            Origin::signed(creator.clone()),
+            RuntimeOrigin::signed(creator.clone()),
             A_LAW_ID,
             A_LAW_ID,
             A_LAW_PRICE
         ));
 
         // Attempt to remove the law
-        
+
         assert_noop!(
-            LawModule::remove(
-                Origin::signed(creator.clone()),
-                A_LAW_ID,
-                A_LAW_TEXT
-            ),
+            LawModule::remove(RuntimeOrigin::signed(creator.clone()), A_LAW_ID, A_LAW_TEXT),
             Error::<Test>::OutdatedText
         );
 
@@ -873,7 +863,7 @@ fn create_and_edit_success() {
 
         // Create a law that will be edited
         assert_ok!(LawModule::create(
-            Origin::signed(creator.clone()),
+            RuntimeOrigin::signed(creator.clone()),
             ANOTHER_LAW_ID,
             ANOTHER_LAW_TEXT,
             ANOTHER_LAW_PRICE
@@ -883,9 +873,9 @@ fn create_and_edit_success() {
         frame_system::Pallet::<Test>::reset_events();
 
         // Create and edit
-        let edit_price = ANOTHER_LAW_PRICE+1;
+        let edit_price = ANOTHER_LAW_PRICE + 1;
         assert_ok!(LawModule::create_and_edit(
-            Origin::signed(creator.clone()),
+            RuntimeOrigin::signed(creator.clone()),
             A_LAW_ID,
             A_LAW_TEXT,
             A_LAW_PRICE,
@@ -894,18 +884,21 @@ fn create_and_edit_success() {
             EDITED_LAW_TEXT,
             edit_price,
         ));
-        
+
         // Assert data was updated and the balance was deducted
         let (created_text, created_price) = LawModule::get_law(A_LAW_ID).unwrap();
         assert_eq!(created_text, A_LAW_TEXT);
         assert_eq!(created_price, A_LAW_PRICE);
-    
+
         let (edited_text, edited_price) = LawModule::get_law(ANOTHER_LAW_ID).unwrap();
         assert_eq!(edited_text, EDITED_LAW_TEXT);
         assert_eq!(edited_price, edit_price);
 
         let post_balance = <pallet_balances::Pallet<Test>>::total_balance(&creator);
-        assert_eq!(post_balance, initial_balance - A_LAW_PRICE - ANOTHER_LAW_PRICE - edit_price);
+        assert_eq!(
+            post_balance,
+            initial_balance - A_LAW_PRICE - ANOTHER_LAW_PRICE - edit_price
+        );
 
         // Check for emitted event
         let events = frame_system::Pallet::<Test>::events();
@@ -935,14 +928,14 @@ fn create_and_edit_used_id() {
     new_test_ext().execute_with(|| {
         let creator = account_id_from_raw(CREATOR);
         assert_ok!(LawModule::create(
-            Origin::signed(creator),
+            RuntimeOrigin::signed(creator),
             A_LAW_ID,
             A_LAW_ID,
             A_LAW_PRICE
         ));
         assert_noop!(
             LawModule::create_and_edit(
-                Origin::signed(creator),
+                RuntimeOrigin::signed(creator),
                 A_LAW_ID,
                 A_LAW_ID,
                 A_LAW_PRICE,
@@ -961,14 +954,14 @@ fn create_and_edit_balance_is_not_enough() {
     new_test_ext().execute_with(|| {
         let creator = account_id_from_raw(CREATOR);
         assert_ok!(LawModule::create(
-            Origin::signed(creator),
+            RuntimeOrigin::signed(creator),
             ANOTHER_LAW_ID,
             ANOTHER_LAW_TEXT,
             ANOTHER_LAW_PRICE
         ));
         assert_noop!(
             LawModule::create_and_edit(
-                Origin::signed(creator),
+                RuntimeOrigin::signed(creator),
                 A_LAW_ID,
                 A_LAW_ID,
                 A_LAW_PRICE,
@@ -989,7 +982,7 @@ fn create_and_edit_missing_id() {
         let editor = account_id_from_raw(EDITOR);
         assert_noop!(
             LawModule::create_and_edit(
-                Origin::signed(editor),
+                RuntimeOrigin::signed(editor),
                 A_LAW_ID,
                 A_LAW_ID,
                 A_LAW_PRICE,
@@ -1012,7 +1005,7 @@ fn create_and_edit_new_price_is_low() {
 
         // Attempt to create the law
         assert_ok!(LawModule::create(
-            Origin::signed(creator.clone()),
+            RuntimeOrigin::signed(creator.clone()),
             ANOTHER_LAW_ID,
             ANOTHER_LAW_TEXT,
             ANOTHER_LAW_PRICE
@@ -1025,7 +1018,7 @@ fn create_and_edit_new_price_is_low() {
         let price_for_edit = ANOTHER_LAW_PRICE - 1;
         assert_noop!(
             LawModule::create_and_edit(
-                Origin::signed(editor),
+                RuntimeOrigin::signed(editor),
                 A_LAW_ID,
                 A_LAW_TEXT,
                 A_LAW_PRICE,

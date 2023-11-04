@@ -45,39 +45,39 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
 impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
         // Storage: Laws Laws (r:1 w:1)
         fn create() -> Weight {
-                (49_000_000 as Weight)
-                        .saturating_add(T::DbWeight::get().reads(1 as Weight))
-                        .saturating_add(T::DbWeight::get().writes(1 as Weight))
+                Weight::from_parts(49_000_000, 0)
+                        .saturating_add(T::DbWeight::get().reads(1_u64))
+                        .saturating_add(T::DbWeight::get().writes(1_u64))
         }
         // Storage: Laws Laws (r:1 w:1)
         fn edit() -> Weight {
-                (48_000_000 as Weight)
-                        .saturating_add(T::DbWeight::get().reads(1 as Weight))
-                        .saturating_add(T::DbWeight::get().writes(1 as Weight))
+                Weight::from_parts(48_000_000, 0)
+                        .saturating_add(T::DbWeight::get().reads(1_u64))
+                        .saturating_add(T::DbWeight::get().writes(1_u64))
         }
         // Storage: Laws Laws (r:2 w:2)
         fn create_and_edit() -> Weight {
-                (72_000_000 as Weight)
-                        .saturating_add(T::DbWeight::get().reads(2 as Weight))
-                        .saturating_add(T::DbWeight::get().writes(2 as Weight))
+                Weight::from_parts(72_000_000, 0)
+                        .saturating_add(T::DbWeight::get().reads(2_u64))
+                        .saturating_add(T::DbWeight::get().writes(2_u64))
         }
         // Storage: Laws Laws (r:1 w:1)
         fn upvote() -> Weight {
-                (48_000_000 as Weight)
-                        .saturating_add(T::DbWeight::get().reads(1 as Weight))
-                        .saturating_add(T::DbWeight::get().writes(1 as Weight))
+                Weight::from_parts(48_000_000, 0)
+                        .saturating_add(T::DbWeight::get().reads(1_u64))
+                        .saturating_add(T::DbWeight::get().writes(1_u64))
         }
         // Storage: Laws Laws (r:1 w:1)
         fn downvote() -> Weight {
-                (47_000_000 as Weight)
-                        .saturating_add(T::DbWeight::get().reads(1 as Weight))
-                        .saturating_add(T::DbWeight::get().writes(1 as Weight))
+                Weight::from_parts(47_000_000, 0)
+                        .saturating_add(T::DbWeight::get().reads(1_u64))
+                        .saturating_add(T::DbWeight::get().writes(1_u64))
         }
         // Storage: Laws Laws (r:1 w:1)
         fn remove() -> Weight {
-                (46_000_000 as Weight)
-                        .saturating_add(T::DbWeight::get().reads(1 as Weight))
-                        .saturating_add(T::DbWeight::get().writes(1 as Weight))
+                Weight::from_parts(46_000_000, 0)
+                        .saturating_add(T::DbWeight::get().reads(1_u64))
+                        .saturating_add(T::DbWeight::get().writes(1_u64))
         }
 }
 
@@ -85,38 +85,38 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 impl WeightInfo for () {
         // Storage: Laws Laws (r:1 w:1)
         fn create() -> Weight {
-                (49_000_000 as Weight)
-                        .saturating_add(RocksDbWeight::get().reads(1 as Weight))
-                        .saturating_add(RocksDbWeight::get().writes(1 as Weight))
+                Weight::from_parts(49_000_000, 0)
+                        .saturating_add(RocksDbWeight::get().reads(1_u64))
+                        .saturating_add(RocksDbWeight::get().writes(1_u64))
         }
         // Storage: Laws Laws (r:1 w:1)
         fn edit() -> Weight {
-                (48_000_000 as Weight)
-                        .saturating_add(RocksDbWeight::get().reads(1 as Weight))
-                        .saturating_add(RocksDbWeight::get().writes(1 as Weight))
+                Weight::from_parts(48_000_000, 0)
+                        .saturating_add(RocksDbWeight::get().reads(1_u64))
+                        .saturating_add(RocksDbWeight::get().writes(1_u64))
         }
         // Storage: Laws Laws (r:2 w:2)
         fn create_and_edit() -> Weight {
-                (72_000_000 as Weight)
-                        .saturating_add(RocksDbWeight::get().reads(2 as Weight))
-                        .saturating_add(RocksDbWeight::get().writes(2 as Weight))
+                Weight::from_parts(72_000_000, 0)
+                        .saturating_add(RocksDbWeight::get().reads(2_u64))
+                        .saturating_add(RocksDbWeight::get().writes(2_u64))
         }
         // Storage: Laws Laws (r:1 w:1)
         fn upvote() -> Weight {
-                (48_000_000 as Weight)
-                        .saturating_add(RocksDbWeight::get().reads(1 as Weight))
-                        .saturating_add(RocksDbWeight::get().writes(1 as Weight))
+                Weight::from_parts(48_000_000, 0)
+                        .saturating_add(RocksDbWeight::get().reads(1_u64))
+                        .saturating_add(RocksDbWeight::get().writes(1_u64))
         }
         // Storage: Laws Laws (r:1 w:1)
         fn downvote() -> Weight {
-                (47_000_000 as Weight)
-                        .saturating_add(RocksDbWeight::get().reads(1 as Weight))
-                        .saturating_add(RocksDbWeight::get().writes(1 as Weight))
+                Weight::from_parts(47_000_000, 0)
+                        .saturating_add(RocksDbWeight::get().reads(1_u64))
+                        .saturating_add(RocksDbWeight::get().writes(1_u64))
         }
         // Storage: Laws Laws (r:1 w:1)
         fn remove() -> Weight {
-                (46_000_000 as Weight)
-                        .saturating_add(RocksDbWeight::get().reads(1 as Weight))
-                        .saturating_add(RocksDbWeight::get().writes(1 as Weight))
+                Weight::from_parts(46_000_000, 0)
+                        .saturating_add(RocksDbWeight::get().reads(1_u64))
+                        .saturating_add(RocksDbWeight::get().writes(1_u64))
         }
 }
